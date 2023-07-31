@@ -16,4 +16,8 @@ features:
 - title: Secure & Spam-Protected
   details: Ensure the security of your data with anti-spam measures and encryption.
 footer: © 2023 Acorn Globus. All rights reserved
+actions:
+  - text: See our guide →
+    link: /guide/
+    type: primary
 ---

@@ -67,7 +67,7 @@ Navigate to the Formester app and access the [Payments section](https://app.form
 
 Provide your PayPal email address along with the Client ID and Secret Key you obtained earlier. This information will enable Formester to securely communicate with PayPal and process payments seamlessly.
 
-### Step 4: Integrate
+### Step 3: Integrate
 - After entering the required details, click on the "Integrate" button to finalize the integration process.
 
 With these simple steps, you've successfully integrated PayPal with Formester. Now, you can [create a form to accept PayPal payments](#how-to-accept-paypal-payments-using-formester-form).
