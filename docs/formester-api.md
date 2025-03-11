@@ -10,7 +10,22 @@ To access Formester's API, you must include an `X-FORMESTER-TOKEN` header in you
 
 ## API Endpoints
 
-### 1. Get List of Submissions
+### 1. Get List of Forms
+
+- **HTTP Method:** GET
+- **Endpoint:** `/api/v1/forms`
+
+Use this endpoint to retrieve a list of all forms in your Formester organization.
+
+#### Example Request:
+
+```http
+GET /api/v1/forms
+Host: app.formester.com
+X-FORMESTER-TOKEN: your-access-token
+```
+
+### 2. Get List of Submissions
 
 - **HTTP Method:** GET
 - **Endpoint:** `/api/v1/submissions`
@@ -25,7 +40,7 @@ Host: app.formester.com
 X-FORMESTER-TOKEN: your-access-token
 ```
 
-### 2. Get a Specific Submission
+### 3. Get a Specific Submission
 
 - **HTTP Method:** GET
 - **Endpoint:** `/api/v1/submissions/:id`
@@ -40,7 +55,7 @@ Host: app.formester.com
 X-FORMESTER-TOKEN: your-access-token
 ```
 
-### 3. Delete a Submission
+### 4. Delete a Submission
 
 - **HTTP Method:** DELETE
 - **Endpoint:** `/api/v1/submissions/:id`
@@ -55,7 +70,7 @@ Host: app.formester.com
 X-FORMESTER-TOKEN: your-access-token
 ```
 
-### 4. Filtering Submissions
+### 5. Filtering Submissions
 
 - **HTTP Method:** GET
 - **Endpoint:** `/api/v1/submissions`
