@@ -2,12 +2,31 @@
 
 Formester provides a powerful REST API for managing and analyzing form submissions. Our API allows you to interact with Formester programmatically, giving you access to your forms and submission data.
 
-## API Versions
+---
 
-We currently offer two API versions:
+## 📚 API Documentation
 
-- **[API v1](./formester-api-v1.md)** - Form-level token authentication, ideal for single-form integrations
-- **[API v2](./formester-api-v2.md)** - Organization-level access with improved response formats
+<table>
+<tr>
+<td width="50%" align="center">
+
+### [🔗 API v1 Documentation](./formester-api-v1.md)
+⚠️ *Deprecated* <br/>
+**Form-level access**
+Single form integrations
+
+</td>
+<td width="50%" align="center">
+
+### [🔗 API v2 Documentation](./formester-api-v2.md)
+**Organization-level access** *(Recommended)*
+Multi-form integrations
+
+</td>
+</tr>
+</table>
+
+---
 
 ## Quick Comparison
 

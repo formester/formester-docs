@@ -325,7 +325,7 @@ Delete a specific submission by its unique identifier.
 DELETE /api/v1/submissions/:id
 ```
 
-**Required Scope:** `submission.view`
+**Required Scope:** `submission.delete`
 
 **Path Parameters**
 
