@@ -38,7 +38,7 @@ If you need to access your existing PayPal Client ID and Secret Key, follow thes
 
 ### Step 1: Log in to the PayPal Developer Website
 
-Log in to the [developer dashboard]((https://developer.paypal.com/dashboard)) to access your PayPal Client ID and Secret Key. This information is not available through your regular PayPal account.
+Log in to the [developer dashboard](https://developer.paypal.com/dashboard) to access your PayPal Client ID and Secret Key. This information is not available through your regular PayPal account.
 
 ### Step 2: Click on "Apps & Credentials"
 
@@ -58,7 +58,7 @@ With your PayPal Client ID and Secret Key in hand, you're all set to [integrate 
 
 ![Formester Payments Page](/assets/images/paypal-integration/formester_payments.png)
 
-Navigate to the Formester app and access the [Payments section](https://app.formester.com/payments). From the available payment options, choose PayPal as the preferred payment gateway.
+Navigate to the Formester app and access the [Payments section](https://app.formester.com/integrations). From the available payment options, choose PayPal as the preferred payment gateway.
 
 
 ### Step 2: Fill in the required details
