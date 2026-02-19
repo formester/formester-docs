@@ -24,6 +24,17 @@ Multi-form integrations
 
 </td>
 </tr>
+<tr>
+<td width="50%" align="center">
+
+### [🤖 MCP Server](./formester-mcp-server.md)
+**AI agent integration**
+Connect Claude, GPT-4, and any MCP-compatible model directly to your submissions
+
+</td>
+<td width="50%" align="center">
+</td>
+</tr>
 </table>
 
 ---
@@ -39,5 +50,6 @@ Multi-form integrations
 
 - **For v1**: Contact our support team at [support@formester.com](mailto:support@formester.com) to obtain your token.
 - **For v2**: Visit [app.formester.com/api](https://app.formester.com/api) in your Formester dashboard to generate your token.
+- **For MCP**: See the [MCP Server guide](./formester-mcp-server.md) to connect AI agents directly to your submissions.
 
 For new integrations, we recommend starting with API v2.

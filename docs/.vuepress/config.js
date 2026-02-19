@@ -14,5 +14,13 @@ export default {
         link: '/guide/'
       },
     ],
+    sidebar: [
+      '/guide/',
+      '/formester-api',
+      '/formester-api-v1',
+      '/formester-api-v2',
+      '/paypal-integration',
+      '/formester-mcp-server',
+    ],
   }),
 } 
