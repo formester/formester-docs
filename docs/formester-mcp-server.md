@@ -4,47 +4,119 @@ Connect AI agents directly to your Formester form submissions via the Model Cont
 
 The Formester MCP server lets AI models — including Claude, GPT-4, and any MCP-compatible agent — read submissions, analyze file attachments, search historical data, and write AI-generated insights back to your records. No custom API integration required.
 
----
-
-## Overview
-
-| Property | Value |
-|---|---|
-| Name | `formester` |
-| Version | `1.0.0` |
-| Endpoint | `/mcp` |
-| Transport | HTTP/SSE (streaming) or STDIO |
-| Auth | Bearer token (per-user, per-scope) |
+**Endpoint:** `https://app.formester.com/mcp/sse`
 
 ---
 
 ## Quickstart
 
-### 1. Generate a token
+### 1. Create a token
 
-In your Formester account, go to **API** (from the home page) and click **Generate API Token**. You can scope it to your full account or restrict it to a single form.
+1. Log in to [Formester](https://app.formester.com)
+2. Click **API** in the left sidebar
+3. Click **Create Token**
+4. Enter a name (e.g. "Claude Desktop")
+5. **Forms Access** — leave empty to access all forms, or select specific forms to restrict access
+6. **Permissions** — select what the agent is allowed to do:
+   - **View Submissions** — read submission data and attachment metadata
+   - **Update Submissions** — write custom fields back to submissions
+   - **View Forms** — read form metadata
+7. Click **Create** and copy the token — it won't be shown again
 
-### 2. Connect your AI agent
+### 2. Connect your AI client
 
-**Claude Desktop** (`claude_desktop_config.json`):
+#### Claude Desktop
+
+Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+
 ```json
 {
   "mcpServers": {
     "formester": {
       "command": "npx",
-      "args": ["mcp-remote", "https://app.formester.com/mcp"],
-      "env": {
-        "BEARER_TOKEN": "your_token_here"
-      }
+      "args": [
+        "mcp-remote",
+        "https://app.formester.com/mcp/sse",
+        "--header",
+        "Authorization: Bearer YOUR_TOKEN_HERE"
+      ]
     }
   }
 }
 ```
 
-**STDIO transport:**
+Fully quit and restart Claude Desktop.
+
+#### VS Code (GitHub Copilot)
+
+Create or edit `.vscode/mcp.json`:
+
+```json
+{
+  "servers": {
+    "formester": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://app.formester.com/mcp/sse",
+        "--header",
+        "Authorization: Bearer YOUR_TOKEN_HERE"
+      ]
+    }
+  }
+}
 ```
-BEARER_TOKEN=your_token_here npx mcp-remote https://app.formester.com/mcp
+
+Switch Copilot Chat to **Agent mode** to use the tools.
+
+#### Cursor
+
+**Settings → MCP → Add new MCP server:**
+
+```json
+{
+  "formester": {
+    "command": "npx",
+    "args": [
+      "mcp-remote",
+      "https://app.formester.com/mcp/sse",
+      "--header",
+      "Authorization: Bearer YOUR_TOKEN_HERE"
+    ]
+  }
+}
 ```
+
+#### Claude Code
+
+Run once in your terminal:
+
+```bash
+claude mcp add --transport sse formester https://app.formester.com/mcp/sse --header "Authorization: Bearer YOUR_TOKEN_HERE"
+```
+
+#### Windsurf
+
+Edit `~/.codeium/windsurf/mcp_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "formester": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "https://app.formester.com/mcp/sse",
+        "--header",
+        "Authorization: Bearer YOUR_TOKEN_HERE"
+      ]
+    }
+  }
+}
+```
+
+Restart Windsurf after saving.
 
 ---
 
@@ -52,55 +124,66 @@ BEARER_TOKEN=your_token_here npx mcp-remote https://app.formester.com/mcp
 
 ### `read_submission`
 
-Read a single form submission by ID.
+Read a single form submission by UUID.
 
-- **Scope:** `submission.read`
+- **Required permission:** View Submissions
 - **Returns:** All field values, custom fields, status, spam flag, timestamps
 - Set `include_files: true` to include file attachment metadata (IDs, filenames, URLs)
 - File *content* is not returned here — use `fetch_file` for that
-
-### `update_submission`
-
-Write AI-generated data back to a submission as custom fields.
-
-- **Scope:** `submission.write`
-- **Supported types:** `shorttext`, `longtext`, `number`, `date`, `time`, `radio`, `checkbox`, `multiple-checkbox`
-- Auto-creates new custom columns if they don't exist
-- Cannot overwrite original form submission fields — only custom fields
 
 ### `query_submissions`
 
 Search and filter multiple submissions from a form.
 
-- **Scope:** `submission.read`
-- **Filters:** date range, starred, spam, custom field value
+- **Required permission:** View Submissions
+- **Filters:** date range (`created_after`, `created_before`), `starred`, `spam`, custom field value
 - Paginated: `limit` (max 100) + `offset`, returns `total_count` and `has_more`
-- Use to find similar past submissions, analyze trends, or build context before processing a new one
+- Dates must be ISO8601 with timezone, e.g. `2024-01-01T00:00:00Z`
+
+### `update_submission`
+
+Write AI-generated data back to a submission as custom fields.
+
+- **Required permission:** Update Submissions
+- **Supported types:** `shorttext`, `longtext`, `number`, `date`, `time`, `radio`, `checkbox`, `multiple-checkbox`
+- Auto-creates new custom columns if they don't exist
+- Cannot overwrite original form submission fields — only custom fields
 
 ### `fetch_file`
 
 Download and return the contents of a file attachment.
 
-- **Scope:** `submission.read`
-- **Images** (PNG, JPG, GIF, WebP, SVG) → base64 for vision-capable AI models
-- **PDFs** → extracted text, page by page (or base64 if `extract_text: false`)
-- **Text files** (TXT, MD, CSV, JSON, XML, HTML) → raw text
-- **Audio/Video** → base64
+- **Required permission:** View Submissions
+- **Images** (PNG, JPG, GIF, WebP) → base64 for vision-capable AI models
+- **PDFs** → extracted text (or base64 if `extract_text: false`)
+- **Text files** (TXT, MD, CSV, JSON) → raw text
 - **Max file size:** 10 MB
-- Also returns metadata: image dimensions, PDF page count, author, etc.
+- Call `read_submission` with `include_files: true` first to get attachment IDs
 
 ---
 
-## Auth & Security
+## Choosing permissions
 
-- Bearer token passed via `Authorization: Bearer <token>` header
-- Tokens are scoped per user and optionally restricted to a single form
-- Scopes: `submission.read` and/or `submission.write`
-- `last_used` timestamp tracked per token
+Select only what your agent needs:
+
+| If your agent... | Select |
+|-----------------|--------|
+| Only reads submissions | View Submissions |
+| Reads and writes insights back | View Submissions + Update Submissions |
+| Also needs form details | Add View Forms |
 
 ---
 
-## Typical Workflow
+## Example use cases
+
+- **Job application screening** — read CV attachments, score candidates, save results as custom fields
+- **Support triage** — classify incoming requests by category and urgency, route automatically
+- **Lead qualification** — analyze contact form submissions, flag high-priority leads
+- **Survey analysis** — run sentiment analysis across all responses, tag themes, export insights
+
+---
+
+## Typical workflow
 
 ```
 1. Trigger (webhook / scheduled task / manual)
@@ -111,16 +194,16 @@ Download and return the contents of a file attachment.
 6. update_submission     → write results (scores, labels, summaries) back to the record
 ```
 
-### Example use cases
+---
 
-- **Job application screening** — read CV attachments, score candidates, save results as custom fields
-- **Lead qualification** — analyze contact form submissions, enrich with company data, flag high-priority leads
-- **Support triage** — classify incoming requests by category and urgency, route automatically
-- **Survey analysis** — run sentiment analysis across all responses, tag themes, export insights
+## Troubleshooting
+
+See [Troubleshooting](https://github.com/formester/mcp/blob/main/docs/troubleshooting.md) for common errors and fixes.
 
 ---
 
 ## Links
 
 - [Formester](https://formester.com)
+- [MCP GitHub Repository](https://github.com/formester/mcp)
 - [REST API Documentation](./formester-api-v2.md)
