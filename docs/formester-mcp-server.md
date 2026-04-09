@@ -2,32 +2,58 @@
 
 Connect AI agents directly to your Formester form submissions via the Model Context Protocol (MCP).
 
-The Formester MCP server lets AI models — including Claude, GPT-4, and any MCP-compatible agent — read submissions, analyze file attachments, search historical data, and write AI-generated insights back to your records. No custom API integration required.
+The Formester MCP server lets AI models — including Claude, ChatGPT, and any MCP-compatible agent — read submissions, analyze file attachments, search historical data, and write AI-generated insights back to your records. No custom API integration required.
 
-**Endpoint:** `https://app.formester.com/mcp/sse`
+**Endpoint:** `https://app.formester.com/mcp`
 
 ---
 
-## Quickstart
+## Authentication
 
-### 1. Create a token
+The Formester MCP server supports two authentication methods:
+
+| Method | Best for |
+|--------|---------|
+| **OAuth** | Interactive clients (Claude, ChatGPT, Cursor, VS Code) — authorize via browser, no token setup |
+| **API Token** | Scripts, automation, or clients without OAuth support — create once in Formester |
+
+### OAuth (Recommended)
+
+Most modern MCP clients handle OAuth automatically — just add the server URL and your browser will open a Formester authorization page.
+
+1. Add `https://app.formester.com/mcp` to your MCP client
+2. Your browser opens the Formester authorization page
+3. You approve the requested permissions
+4. The client connects — no token needed
+
+### API Tokens
+
+For scripts, automation, or clients that don't support OAuth:
 
 1. Log in to [Formester](https://app.formester.com)
 2. Click **API** in the left sidebar
 3. Click **Create Token**
-4. Enter a name (e.g. "Claude Desktop")
-5. **Forms Access** — leave empty to access all forms, or select specific forms to restrict access
-6. **Permissions** — select what the agent is allowed to do:
+4. Enter a name (e.g. "My Script")
+5. **Forms Access** — leave empty to access all forms in your organization, or select specific forms to restrict access
+6. **Permissions** — select what the token is allowed to do:
    - **View Submissions** — read submission data and attachment metadata
    - **Update Submissions** — write custom fields back to submissions
    - **View Forms** — read form metadata
 7. Click **Create** and copy the token — it won't be shown again
 
-### 2. Connect your AI client
+To revoke a token, click **Revoke** next to it on the same page.
 
-#### Claude Desktop
+---
 
-Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+## Connect your AI client
+
+### Claude
+
+**Via OAuth (recommended)**
+
+Settings → Connectors → Add custom connector → enter a name and `https://app.formester.com/mcp` as the URL. Claude will prompt you to authorize on first connection.
+
+**Via API Token**
 
 ```json
 {
@@ -36,7 +62,7 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) o
       "command": "npx",
       "args": [
         "mcp-remote",
-        "https://app.formester.com/mcp/sse",
+        "https://app.formester.com/mcp",
         "--header",
         "Authorization: Bearer YOUR_TOKEN_HERE"
       ]
@@ -47,7 +73,17 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) o
 
 Fully quit and restart Claude Desktop.
 
-#### VS Code (GitHub Copilot)
+---
+
+### ChatGPT
+
+ChatGPT → Apps → Search for "Formester" → Connect. ChatGPT handles OAuth automatically.
+
+---
+
+### VS Code (GitHub Copilot)
+
+**Via OAuth**
 
 Create or edit `.vscode/mcp.json`:
 
@@ -55,48 +91,88 @@ Create or edit `.vscode/mcp.json`:
 {
   "servers": {
     "formester": {
-      "type": "stdio",
-      "command": "npx",
-      "args": [
-        "mcp-remote",
-        "https://app.formester.com/mcp/sse",
-        "--header",
-        "Authorization: Bearer YOUR_TOKEN_HERE"
-      ]
+      "type": "http",
+      "url": "https://app.formester.com/mcp"
     }
   }
 }
 ```
 
-Switch Copilot Chat to **Agent mode** to use the tools.
+VS Code will handle the OAuth flow automatically. Switch Copilot Chat to **Agent mode** to use the tools.
 
-#### Cursor
-
-**Settings → MCP → Add new MCP server:**
+**Via API Token**
 
 ```json
 {
-  "formester": {
-    "command": "npx",
-    "args": [
-      "mcp-remote",
-      "https://app.formester.com/mcp/sse",
-      "--header",
-      "Authorization: Bearer YOUR_TOKEN_HERE"
-    ]
+  "servers": {
+    "formester": {
+      "type": "http",
+      "url": "https://app.formester.com/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_TOKEN_HERE"
+      }
+    }
   }
 }
 ```
 
-#### Claude Code
+---
 
-Run once in your terminal:
+### Cursor
 
-```bash
-claude mcp add --transport sse formester https://app.formester.com/mcp/sse --header "Authorization: Bearer YOUR_TOKEN_HERE"
+**Via OAuth**
+
+Settings → MCP → Add new MCP server:
+
+```json
+{
+  "mcpServers": {
+    "formester": {
+      "url": "https://app.formester.com/mcp"
+    }
+  }
+}
 ```
 
-#### Windsurf
+Cursor will prompt you to authorize via browser on first use.
+
+**Via API Token**
+
+```json
+{
+  "mcpServers": {
+    "formester": {
+      "url": "https://app.formester.com/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_TOKEN_HERE"
+      }
+    }
+  }
+}
+```
+
+---
+
+### Claude Code
+
+**Via OAuth**
+
+```bash
+claude mcp add --transport http formester https://app.formester.com/mcp
+```
+
+**Via API Token**
+
+```bash
+claude mcp add --transport http formester https://app.formester.com/mcp \
+  --header "Authorization: Bearer YOUR_TOKEN_HERE"
+```
+
+---
+
+### Windsurf
+
+**Via OAuth**
 
 Edit `~/.codeium/windsurf/mcp_config.json`:
 
@@ -104,13 +180,24 @@ Edit `~/.codeium/windsurf/mcp_config.json`:
 {
   "mcpServers": {
     "formester": {
-      "command": "npx",
-      "args": [
-        "mcp-remote",
-        "https://app.formester.com/mcp/sse",
-        "--header",
-        "Authorization: Bearer YOUR_TOKEN_HERE"
-      ]
+      "type": "streamable-http",
+      "url": "https://app.formester.com/mcp"
+    }
+  }
+}
+```
+
+**Via API Token**
+
+```json
+{
+  "mcpServers": {
+    "formester": {
+      "type": "streamable-http",
+      "url": "https://app.formester.com/mcp",
+      "headers": {
+        "Authorization": "Bearer YOUR_TOKEN_HERE"
+      }
     }
   }
 }
