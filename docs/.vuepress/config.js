@@ -20,6 +20,7 @@ export default {
       '/formester-api-v1',
       '/formester-api-v2',
       '/paypal-integration',
+      '/authorizenet-integration',
       '/formester-mcp-server',
     ],
   }),

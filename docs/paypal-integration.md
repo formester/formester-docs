@@ -94,7 +94,7 @@ In the left sidebar, find the "PayPal" field under "Payment". Drag and drop the 
 
 Select the PayPal field on your form to open the field settings. Provide the necessary details, such as the label, description, and payment amount. Customize the appearance and behavior of the PayPal field and form according to your preferences.
 
-### Step 4: Save Your Form
-Once you have configured the PayPal field to your satisfaction, click on the "Save" button to save your form.
+### Step 4: Publish Your Form
+Once you have configured the PayPal field to your satisfaction, click the **Publish** button in the top right corner to make your form live. Your changes are saved automatically as you build.
 
 Congratulations! Your Formester form is now set up to accept PayPal payments. When users fill out the form, they can make secure and hassle-free payments using the PayPal payment gateway. Enjoy the convenience of managing transactions and providing a smooth payment experience to your users!
