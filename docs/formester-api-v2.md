@@ -408,6 +408,672 @@ Content-Type: application/json
 
 ---
 
+### Prefills
+
+Prefills let you pre-populate a form's fields for a recipient by passing a `_prefill` UUID in the form's survey URL. They are scoped to a specific form, addressed via `:form_uuid` in the path.
+
+**Note:** Response keys for prefill and unique link endpoints are returned in `snake_case`, unlike the `forms` and `submissions` endpoints which use `camelCase`.
+
+#### List Prefills
+
+Retrieve a paginated list of prefills for a form.
+
+**Endpoint**
+
+```
+GET /api/v2/forms/:form_uuid/prefills
+```
+
+**Required Scope:** `prefill.read`
+
+**Path Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `form_uuid` | string | Yes | Form UUID (numeric form ID also accepted) |
+
+**Query Parameters**
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `page` | integer | No | 1 | Page number |
+| `name` | string | No | - | Filter by prefill name (partial match) |
+| `include_unique_link_prefills` | boolean | No | `false` | Include prefills generated for unique links |
+
+**cURL Example**
+
+```bash
+curl -X GET "https://app.formester.com/api/v2/forms/550e8400-e29b-41d4-a716-446655440000/prefills" \
+  -H "X-FORMESTER-TOKEN: your-access-token"
+```
+
+**Response**
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+```
+
+```json
+{
+  "prefills": [
+    {
+      "id": "990e8400-e29b-41d4-a716-446655440004",
+      "name": "John Doe",
+      "url": "https://app.formester.com/s/550e8400-e29b-41d4-a716-446655440000?_prefill=990e8400-e29b-41d4-a716-446655440004",
+      "created_at": "2024-01-20T10:00:00.000Z"
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "per_page": 20,
+    "total": 1
+  }
+}
+```
+
+**Response Fields**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `prefills` | array | Array of prefill objects |
+| `prefills[].id` | string | Unique prefill identifier (UUID) |
+| `prefills[].name` | string | Prefill name |
+| `prefills[].url` | string | Survey URL with the `_prefill` query parameter applied |
+| `prefills[].created_at` | string | ISO 8601 creation timestamp |
+| `meta.page` | integer | Current page number |
+| `meta.per_page` | integer | Items per page |
+| `meta.total` | integer | Total number of prefills |
+
+---
+
+#### Get Prefill
+
+Retrieve a specific prefill by its UUID, including its prefill data.
+
+**Endpoint**
+
+```
+GET /api/v2/forms/:form_uuid/prefills/:id
+```
+
+**Required Scope:** `prefill.read`
+
+**Path Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `form_uuid` | string | Yes | Form UUID (numeric form ID also accepted) |
+| `id` | string | Yes | Prefill UUID |
+
+**cURL Example**
+
+```bash
+curl -X GET "https://app.formester.com/api/v2/forms/550e8400-e29b-41d4-a716-446655440000/prefills/990e8400-e29b-41d4-a716-446655440004" \
+  -H "X-FORMESTER-TOKEN: your-access-token"
+```
+
+**Response**
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+```
+
+```json
+{
+  "id": "990e8400-e29b-41d4-a716-446655440004",
+  "name": "John Doe",
+  "url": "https://app.formester.com/s/550e8400-e29b-41d4-a716-446655440000?_prefill=990e8400-e29b-41d4-a716-446655440004",
+  "created_at": "2024-01-20T10:00:00.000Z",
+  "data": [
+    {"id": "el_name_1", "value": "John Doe"},
+    {"id": "el_email_1", "value": "john@example.com"}
+  ]
+}
+```
+
+**Response Fields**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Unique prefill identifier (UUID) |
+| `name` | string | Prefill name |
+| `url` | string | Survey URL with the `_prefill` query parameter applied |
+| `created_at` | string | ISO 8601 creation timestamp |
+| `data` | array | Array of `{id, value}` pairs mapping form element IDs to prefill values |
+
+If the prefill cannot be found:
+
+```http
+HTTP/1.1 404 Not Found
+
+{
+  "message": "Prefill not found"
+}
+```
+
+---
+
+#### Bulk Create Prefills
+
+Create one or more prefills for a form in a single request.
+
+**Endpoint**
+
+```
+POST /api/v2/forms/:form_uuid/prefills
+```
+
+**Required Scope:** `prefill.write`
+
+**Path Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `form_uuid` | string | Yes | Form UUID (numeric form ID also accepted) |
+
+**Body Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `prefills` | array | Yes | Array of prefill objects to create |
+| `prefills[].name` | string | No | Prefill name (defaults to a generated UUID) |
+| `prefills[].prefill_data` | array | Yes | Array of `{id, value}` pairs mapping form element IDs to prefill values |
+
+**cURL Example**
+
+```bash
+curl -X POST "https://app.formester.com/api/v2/forms/550e8400-e29b-41d4-a716-446655440000/prefills" \
+  -H "X-FORMESTER-TOKEN: your-access-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prefills": [
+      {
+        "name": "John Doe",
+        "prefill_data": [
+          {"id": "el_name_1", "value": "John Doe"},
+          {"id": "el_email_1", "value": "john@example.com"}
+        ]
+      }
+    ]
+  }'
+```
+
+**Response**
+
+```http
+HTTP/1.1 201 Created
+Content-Type: application/json
+```
+
+```json
+{
+  "prefills": [
+    {
+      "prefill_id": "990e8400-e29b-41d4-a716-446655440004",
+      "url": "https://app.formester.com/s/550e8400-e29b-41d4-a716-446655440000?_prefill=990e8400-e29b-41d4-a716-446655440004",
+      "name": "John Doe"
+    }
+  ]
+}
+```
+
+**Response Fields**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `prefills` | array | Array of created prefill objects |
+| `prefills[].prefill_id` | string | Unique prefill identifier (UUID) |
+| `prefills[].url` | string | Survey URL with the `_prefill` query parameter applied |
+| `prefills[].name` | string | Prefill name |
+
+**Validation Errors**
+
+```http
+HTTP/1.1 400 Bad Request
+
+{
+  "error": "prefills is required and must be an array"
+}
+```
+
+```http
+HTTP/1.1 400 Bad Request
+
+{
+  "error": "prefills[0].prefill_data is required and must be an array"
+}
+```
+
+---
+
+#### Bulk Delete Prefills
+
+Delete one or more prefills by UUID.
+
+**Endpoint**
+
+```
+DELETE /api/v2/forms/:form_uuid/prefills
+```
+
+**Required Scope:** `prefill.write`
+
+**Path Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `form_uuid` | string | Yes | Form UUID (numeric form ID also accepted) |
+
+**Body Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `ids` | array | Yes | Array of prefill UUIDs to delete (max 100) |
+
+**cURL Example**
+
+```bash
+curl -X DELETE "https://app.formester.com/api/v2/forms/550e8400-e29b-41d4-a716-446655440000/prefills" \
+  -H "X-FORMESTER-TOKEN: your-access-token" \
+  -H "Content-Type: application/json" \
+  -d '{"ids": ["990e8400-e29b-41d4-a716-446655440004", "aa0e8400-e29b-41d4-a716-446655440005"]}'
+```
+
+**Response**
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+```
+
+```json
+{
+  "deleted": 2
+}
+```
+
+**Validation Errors**
+
+If any of the supplied IDs do not exist:
+
+```http
+HTTP/1.1 422 Unprocessable Entity
+
+{
+  "error": "Prefill IDs not found",
+  "not_found_ids": ["aa0e8400-e29b-41d4-a716-446655440005"]
+}
+```
+
+```http
+HTTP/1.1 400 Bad Request
+
+{
+  "error": "too many ids (max 100)"
+}
+```
+
+---
+
+### Unique Links
+
+Unique links are per-recipient survey links that can carry their own prefill data, expiry, and submission status. They are scoped to a specific form, addressed via `:form_uuid` in the path.
+
+#### List Unique Links
+
+Retrieve a paginated list of unique links for a form.
+
+**Endpoint**
+
+```
+GET /api/v2/forms/:form_uuid/unique_links
+```
+
+**Required Scope:** `unique_link.read`
+
+**Path Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `form_uuid` | string | Yes | Form UUID (numeric form ID also accepted) |
+
+**Query Parameters**
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `page` | integer | No | 1 | Page number |
+| `entry_name` | string | No | - | Filter by entry name (partial match) |
+| `include_prefill_data` | boolean | No | `false` | Include the linked prefill's `prefill_data` in the response |
+
+**cURL Example**
+
+```bash
+curl -X GET "https://app.formester.com/api/v2/forms/550e8400-e29b-41d4-a716-446655440000/unique_links?include_prefill_data=true" \
+  -H "X-FORMESTER-TOKEN: your-access-token"
+```
+
+**Response**
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+```
+
+```json
+{
+  "unique_links": [
+    {
+      "id": "bb0e8400-e29b-41d4-a716-446655440006",
+      "entry_name": "Onboarding Link",
+      "status": "pending",
+      "active": true,
+      "expires_at": "2024-03-01T00:00:00.000Z",
+      "url": "https://app.formester.com/u/bb0e8400-e29b-41d4-a716-446655440006",
+      "prefill_id": "990e8400-e29b-41d4-a716-446655440004",
+      "created_at": "2024-01-20T10:00:00.000Z",
+      "prefill_data": [
+        {"id": "el_email_1", "value": "a@x.com"}
+      ]
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "per_page": 20,
+    "total": 1
+  }
+}
+```
+
+**Response Fields**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `unique_links` | array | Array of unique link objects |
+| `unique_links[].id` | string | Unique link identifier (UUID) |
+| `unique_links[].entry_name` | string | Recipient/entry name |
+| `unique_links[].status` | string | Submission status: `pending`, `in_progress`, or `completed` |
+| `unique_links[].active` | boolean | Whether the link is active |
+| `unique_links[].expires_at` | string | ISO 8601 expiration timestamp, or `null` |
+| `unique_links[].url` | string | Survey URL for this unique link |
+| `unique_links[].prefill_id` | string | UUID of the linked prefill, or `null` |
+| `unique_links[].created_at` | string | ISO 8601 creation timestamp |
+| `unique_links[].prefill_data` | array | Linked prefill's `{id, value}` data (only when `include_prefill_data=true`) |
+| `meta.page` | integer | Current page number |
+| `meta.per_page` | integer | Items per page |
+| `meta.total` | integer | Total number of unique links |
+
+---
+
+#### Bulk Create Unique Links
+
+Create one or more unique links for a form in a single request, optionally attaching prefill data to each.
+
+**Endpoint**
+
+```
+POST /api/v2/forms/:form_uuid/unique_links
+```
+
+**Required Scope:** `unique_link.write`
+
+**Path Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `form_uuid` | string | Yes | Form UUID (numeric form ID also accepted) |
+
+**Body Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `unique_links` | array | Yes | Array of unique link objects to create (max 100) |
+| `unique_links[].entry_name` | string | No | Recipient/entry name (must be unique per form; defaults to a generated ID) |
+| `unique_links[].expires_at` | string | No | ISO 8601 expiration timestamp |
+| `unique_links[].prefill_data` | array | No | Array of `{id, value}` pairs; when present, a prefill is created and attached to the link |
+
+**cURL Example**
+
+```bash
+curl -X POST "https://app.formester.com/api/v2/forms/550e8400-e29b-41d4-a716-446655440000/unique_links" \
+  -H "X-FORMESTER-TOKEN: your-access-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "unique_links": [
+      {
+        "entry_name": "Jane Smith",
+        "expires_at": "2024-03-01T00:00:00.000Z",
+        "prefill_data": [
+          {"id": "el_email_1", "value": "jane@example.com"}
+        ]
+      }
+    ]
+  }'
+```
+
+**Response**
+
+```http
+HTTP/1.1 201 Created
+Content-Type: application/json
+```
+
+```json
+{
+  "unique_links": [
+    {
+      "id": "bb0e8400-e29b-41d4-a716-446655440006",
+      "entry_name": "Jane Smith",
+      "url": "https://app.formester.com/u/bb0e8400-e29b-41d4-a716-446655440006",
+      "expires_at": "2024-03-01T00:00:00.000Z",
+      "prefill_id": "990e8400-e29b-41d4-a716-446655440004"
+    }
+  ]
+}
+```
+
+**Response Fields**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `unique_links` | array | Array of created unique link objects |
+| `unique_links[].id` | string | Unique link identifier (UUID) |
+| `unique_links[].entry_name` | string | Recipient/entry name |
+| `unique_links[].url` | string | Survey URL for this unique link |
+| `unique_links[].expires_at` | string | ISO 8601 expiration timestamp, or `null` |
+| `unique_links[].prefill_id` | string | UUID of the created prefill, or `null` if no `prefill_data` was supplied |
+
+**Validation Errors**
+
+```http
+HTTP/1.1 400 Bad Request
+
+{
+  "error": "unique_links is required and must be an array"
+}
+```
+
+```http
+HTTP/1.1 400 Bad Request
+
+{
+  "error": "too many unique_links (max 100)"
+}
+```
+
+```http
+HTTP/1.1 422 Unprocessable Entity
+
+{
+  "error": "Duplicate entry_name for this form"
+}
+```
+
+---
+
+#### Update Unique Link
+
+Update a unique link's entry name, expiry, active state, and/or attached prefill data.
+
+**Endpoint**
+
+```
+PATCH /api/v2/forms/:form_uuid/unique_links/:id
+```
+
+**Required Scope:** `unique_link.write`
+
+**Path Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `form_uuid` | string | Yes | Form UUID (numeric form ID also accepted) |
+| `id` | string | Yes | Unique link UUID |
+
+**Body Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `entry_name` | string | No | New recipient/entry name (must be unique per form; cannot be blank) |
+| `expires_at` | string | No | New ISO 8601 expiration timestamp |
+| `active` | boolean | No | Whether the link is active |
+| `prefill_data` | array | No | Array of `{id, value}` pairs; replaces (or creates) the linked prefill's data |
+
+**cURL Example**
+
+```bash
+curl -X PATCH "https://app.formester.com/api/v2/forms/550e8400-e29b-41d4-a716-446655440000/unique_links/bb0e8400-e29b-41d4-a716-446655440006" \
+  -H "X-FORMESTER-TOKEN: your-access-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "entry_name": "Jane S.",
+    "active": false,
+    "prefill_data": [{"id": "el_email_1", "value": "new@example.com"}]
+  }'
+```
+
+**Response**
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+```
+
+```json
+{
+  "id": "bb0e8400-e29b-41d4-a716-446655440006",
+  "entry_name": "Jane S.",
+  "status": "pending",
+  "active": false,
+  "expires_at": "2024-03-01T00:00:00.000Z",
+  "url": "https://app.formester.com/u/bb0e8400-e29b-41d4-a716-446655440006",
+  "prefill_id": "990e8400-e29b-41d4-a716-446655440004",
+  "created_at": "2024-01-20T10:00:00.000Z"
+}
+```
+
+**Response Fields**
+
+Same shape as a [list response](#list-unique-links) item (without `prefill_data`, unless requested separately via the list endpoint).
+
+**Validation Errors**
+
+```http
+HTTP/1.1 400 Bad Request
+
+{
+  "error": "entry_name cannot be blank"
+}
+```
+
+```http
+HTTP/1.1 422 Unprocessable Entity
+
+{
+  "error": "Duplicate entry_name for this form"
+}
+```
+
+```http
+HTTP/1.1 404 Not Found
+
+{
+  "message": "Unique link not found"
+}
+```
+
+---
+
+#### Bulk Delete Unique Links
+
+Delete one or more unique links by UUID. Linked prefills are destroyed along with their unique link.
+
+**Endpoint**
+
+```
+DELETE /api/v2/forms/:form_uuid/unique_links
+```
+
+**Required Scope:** `unique_link.write`
+
+**Path Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `form_uuid` | string | Yes | Form UUID (numeric form ID also accepted) |
+
+**Body Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `ids` | array | Yes | Array of unique link UUIDs to delete (max 100) |
+
+**cURL Example**
+
+```bash
+curl -X DELETE "https://app.formester.com/api/v2/forms/550e8400-e29b-41d4-a716-446655440000/unique_links" \
+  -H "X-FORMESTER-TOKEN: your-access-token" \
+  -H "Content-Type: application/json" \
+  -d '{"ids": ["bb0e8400-e29b-41d4-a716-446655440006"]}'
+```
+
+**Response**
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+```
+
+```json
+{
+  "deleted": 1
+}
+```
+
+**Validation Errors**
+
+If any of the supplied IDs do not exist:
+
+```http
+HTTP/1.1 422 Unprocessable Entity
+
+{
+  "error": "Unique link IDs not found",
+  "not_found_ids": ["cc0e8400-e29b-41d4-a716-446655440007"]
+}
+```
+
+```http
+HTTP/1.1 400 Bad Request
+
+{
+  "error": "too many ids (max 100)"
+}
+```
+
+---
+
 ## Filtering & Sorting
 
 ### Filtering Submissions
