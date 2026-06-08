@@ -75,6 +75,10 @@ V2 tokens use scopes to control access to API operations.
 | `form.view` | Read access to forms | GET /forms |
 | `submission.view` | Read access to submissions | GET /submissions, GET /submissions/:id |
 | `submission.delete` | Delete submissions | DELETE /submissions/:id |
+| `prefill.read` | Read access to prefills | GET /forms/:form_uuid/prefills, GET /forms/:form_uuid/prefills/:id |
+| `prefill.write` | Create and delete prefills | POST /forms/:form_uuid/prefills, DELETE /forms/:form_uuid/prefills |
+| `unique_link.read` | Read access to unique links | GET /forms/:form_uuid/unique_links |
+| `unique_link.write` | Create, update and delete unique links | POST /forms/:form_uuid/unique_links, PATCH /forms/:form_uuid/unique_links/:id, DELETE /forms/:form_uuid/unique_links |
 
 ### Scope Error Response
 
