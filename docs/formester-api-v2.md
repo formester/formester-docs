@@ -460,7 +460,7 @@ Content-Type: application/json
     {
       "id": "990e8400-e29b-41d4-a716-446655440004",
       "name": "John Doe",
-      "url": "https://app.formester.com/s/550e8400-e29b-41d4-a716-446655440000?_prefill=990e8400-e29b-41d4-a716-446655440004",
+      "url": "https://app.formester.com/f/550e8400-e29b-41d4-a716-446655440000?_prefill=990e8400-e29b-41d4-a716-446655440004",
       "created_at": "2024-01-20T10:00:00.000Z"
     }
   ],
@@ -524,7 +524,7 @@ Content-Type: application/json
 {
   "id": "990e8400-e29b-41d4-a716-446655440004",
   "name": "John Doe",
-  "url": "https://app.formester.com/s/550e8400-e29b-41d4-a716-446655440000?_prefill=990e8400-e29b-41d4-a716-446655440004",
+  "url": "https://app.formester.com/f/550e8400-e29b-41d4-a716-446655440000?_prefill=990e8400-e29b-41d4-a716-446655440004",
   "created_at": "2024-01-20T10:00:00.000Z",
   "data": [
     {"id": "el_name_1", "value": "John Doe"},
@@ -612,7 +612,7 @@ Content-Type: application/json
   "prefills": [
     {
       "prefill_id": "990e8400-e29b-41d4-a716-446655440004",
-      "url": "https://app.formester.com/s/550e8400-e29b-41d4-a716-446655440000?_prefill=990e8400-e29b-41d4-a716-446655440004",
+      "url": "https://app.formester.com/f/550e8400-e29b-41d4-a716-446655440000?_prefill=990e8400-e29b-41d4-a716-446655440004",
       "name": "John Doe"
     }
   ]
