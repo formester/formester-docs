@@ -32,6 +32,14 @@ https://app.formester.com/api/v2
 | GET | `/submissions` | `submission.view` | List all submissions |
 | GET | `/submissions/:id` | `submission.view` | Get a specific submission |
 | DELETE | `/submissions/:id` | `submission.delete` | Delete a submission |
+| GET | `/forms/:form_uuid/prefills` | `prefill.read` | List prefills for a form |
+| GET | `/forms/:form_uuid/prefills/:id` | `prefill.read` | Get a specific prefill |
+| POST | `/forms/:form_uuid/prefills` | `prefill.write` | Bulk create prefills |
+| DELETE | `/forms/:form_uuid/prefills` | `prefill.write` | Bulk delete prefills |
+| GET | `/forms/:form_uuid/unique_links` | `unique_link.read` | List unique links for a form |
+| PATCH | `/forms/:form_uuid/unique_links/:id` | `unique_link.write` | Update a unique link |
+| POST | `/forms/:form_uuid/unique_links` | `unique_link.write` | Bulk create unique links |
+| DELETE | `/forms/:form_uuid/unique_links` | `unique_link.write` | Bulk delete unique links |
 
 ---
 
