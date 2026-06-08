@@ -29,6 +29,7 @@ https://app.formester.com/api/v2
 | Method | Endpoint | Scope Required | Description |
 |--------|----------|----------------|-------------|
 | GET | `/forms` | `form.view` | List all forms |
+| GET | `/forms/:id` | `form.view` | Get a specific form, including its element IDs |
 | GET | `/submissions` | `submission.view` | List all submissions |
 | GET | `/submissions/:id` | `submission.view` | Get a specific submission |
 | DELETE | `/submissions/:id` | `submission.delete` | Delete a submission |
@@ -73,7 +74,7 @@ V2 tokens use scopes to control access to API operations.
 
 | Scope | Description | Endpoints |
 |-------|-------------|-----------|
-| `form.view` | Read access to forms | GET /forms |
+| `form.view` | Read access to forms | GET /forms, GET /forms/:id |
 | `submission.view` | Read access to submissions | GET /submissions, GET /submissions/:id |
 | `submission.delete` | Delete submissions | DELETE /submissions/:id |
 | `prefill.read` | Read access to prefills | GET /forms/:form_uuid/prefills, GET /forms/:form_uuid/prefills/:id |
@@ -200,6 +201,91 @@ Content-Type: application/json
 | `meta.totalCount` | integer | Total number of forms |
 | `meta.page` | integer | Current page number |
 | `meta.perPage` | integer | Items per page |
+
+---
+
+#### Get Form
+
+Retrieve a single form's metadata along with its element tree. This is the primary way to discover a form's **element IDs**, which are required when building `prefill_data` for [Prefills](#prefills) and [Unique Links](#unique-links) (each `prefill_data` entry maps an element `id` to a value: `{"id": "el_email_1", "value": "..."}`)
+
+**Endpoint**
+
+```
+GET /api/v2/forms/:id
+```
+
+**Required Scope:** `form.view`
+
+**Path Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | string | Yes | Form UUID (numeric form ID also accepted) |
+
+**cURL Example**
+
+```bash
+curl -X GET "https://app.formester.com/api/v2/forms/550e8400-e29b-41d4-a716-446655440000" \
+  -H "X-FORMESTER-TOKEN: your-access-token"
+```
+
+**Response**
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+```
+
+```json
+{
+  "id": 123,
+  "name": "Contact Form",
+  "createdAt": "2024-01-15T10:30:00.000Z",
+  "updatedAt": "2024-01-20T14:45:00.000Z",
+  "submissionsCount": 42,
+  "elements": [
+    {"id": "el_name_1", "label": "Full Name", "type": "short-text"},
+    {"id": "el_email_1", "label": "Email", "type": "email"},
+    {
+      "id": "el_choice_1",
+      "label": "Favourite Colour",
+      "type": "dropdown",
+      "options": [
+        {"label": "Red", "value": "red"},
+        {"label": "Blue", "value": "blue"}
+      ]
+    }
+  ]
+}
+```
+
+**Response Fields**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | integer | Numeric form identifier |
+| `name` | string | Form name |
+| `createdAt` | string | ISO 8601 creation timestamp |
+| `updatedAt` | string | ISO 8601 last update timestamp |
+| `submissionsCount` | integer | Total number of submissions |
+| `elements` | array | Form's element tree (flattened to the fields below) |
+| `elements[].id` | string | Element ID — use this as `prefill_data[].id` when prefilling this field |
+| `elements[].label` | string | Element label |
+| `elements[].type` | string | Element type (e.g. `short-text`, `email`, `dropdown`, `matrix`, `repeat-field`, `name`, `address`) |
+| `elements[].options` | array | `{label, value}` choices, present for choice-based types (`radio`, `multiple-checkbox`, `dropdown`, `picture-checkbox`, `ranking`) |
+| `elements[].rows` / `elements[].columns` | array | Row/column definitions, present for `matrix` elements |
+| `elements[].components` | array | Nested element list, present for `repeat-field` elements |
+| `elements[].children` | array | Nested `{fixedname, label, required}` sub-fields, present for `name`/`address` elements |
+
+If the form cannot be found:
+
+```http
+HTTP/1.1 404 Not Found
+
+{
+  "message": "Form not found or not authorized"
+}
+```
 
 ---
 
@@ -412,6 +498,8 @@ Content-Type: application/json
 ### Prefills
 
 Prefills let you pre-populate a form's fields for a recipient by passing a `_prefill` UUID in the form's survey URL. They are scoped to a specific form, addressed via `:form_uuid` in the path.
+
+> Each prefill's `data` is an array of `{id, value}` pairs, where `id` is a form element's ID. Use [Get Form](#get-form) (`GET /api/v2/forms/:id`) to look up a form's `elements[].id` values before constructing `data`.
 
 **Note:** Response keys for prefill and unique link endpoints are returned in `snake_case`, unlike the `forms` and `submissions` endpoints which use `camelCase`.
 
@@ -721,6 +809,8 @@ HTTP/1.1 400 Bad Request
 ### Unique Links
 
 Unique links are per-recipient survey links that can carry their own prefill data, expiry, and submission status. They are scoped to a specific form, addressed via `:form_uuid` in the path.
+
+> When supplying `prefill_data` on create/update, each entry is `{id, value}` where `id` is a form element's ID. Use [Get Form](#get-form) (`GET /api/v2/forms/:id`) to look up a form's `elements[].id` values beforehand.
 
 #### List Unique Links
 
