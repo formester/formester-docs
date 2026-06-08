@@ -37,6 +37,7 @@ https://app.formester.com/api/v2
 | POST | `/forms/:form_uuid/prefills` | `prefill.write` | Bulk create prefills |
 | DELETE | `/forms/:form_uuid/prefills` | `prefill.write` | Bulk delete prefills |
 | GET | `/forms/:form_uuid/unique_links` | `unique_link.read` | List unique links for a form |
+| GET | `/forms/:form_uuid/unique_links/:id` | `unique_link.read` | Get a specific unique link |
 | PATCH | `/forms/:form_uuid/unique_links/:id` | `unique_link.write` | Update a unique link |
 | POST | `/forms/:form_uuid/unique_links` | `unique_link.write` | Bulk create unique links |
 | DELETE | `/forms/:form_uuid/unique_links` | `unique_link.write` | Bulk delete unique links |
@@ -77,7 +78,7 @@ V2 tokens use scopes to control access to API operations.
 | `submission.delete` | Delete submissions | DELETE /submissions/:id |
 | `prefill.read` | Read access to prefills | GET /forms/:form_uuid/prefills, GET /forms/:form_uuid/prefills/:id |
 | `prefill.write` | Create and delete prefills | POST /forms/:form_uuid/prefills, DELETE /forms/:form_uuid/prefills |
-| `unique_link.read` | Read access to unique links | GET /forms/:form_uuid/unique_links |
+| `unique_link.read` | Read access to unique links | GET /forms/:form_uuid/unique_links, GET /forms/:form_uuid/unique_links/:id |
 | `unique_link.write` | Create, update and delete unique links | POST /forms/:form_uuid/unique_links, PATCH /forms/:form_uuid/unique_links/:id, DELETE /forms/:form_uuid/unique_links |
 
 ### Scope Error Response
@@ -803,6 +804,87 @@ Content-Type: application/json
 | `meta.page` | integer | Current page number |
 | `meta.per_page` | integer | Items per page |
 | `meta.total` | integer | Total number of unique links |
+
+---
+
+#### Get Unique Link
+
+Retrieve a specific unique link by its UUID.
+
+**Endpoint**
+
+```
+GET /api/v2/forms/:form_uuid/unique_links/:id
+```
+
+**Required Scope:** `unique_link.read`
+
+**Path Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `form_uuid` | string | Yes | Form UUID (numeric form ID also accepted) |
+| `id` | string | Yes | Unique link UUID |
+
+**Query Parameters**
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `include_prefill_data` | boolean | No | `false` | Include the linked prefill's `prefill_data` in the response |
+
+**cURL Example**
+
+```bash
+curl -X GET "https://app.formester.com/api/v2/forms/550e8400-e29b-41d4-a716-446655440000/unique_links/bb0e8400-e29b-41d4-a716-446655440006?include_prefill_data=true" \
+  -H "X-FORMESTER-TOKEN: your-access-token"
+```
+
+**Response**
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+```
+
+```json
+{
+  "id": "bb0e8400-e29b-41d4-a716-446655440006",
+  "entry_name": "Onboarding Link",
+  "status": "pending",
+  "active": true,
+  "expires_at": "2024-03-01T00:00:00.000Z",
+  "url": "https://app.formester.com/u/bb0e8400-e29b-41d4-a716-446655440006",
+  "prefill_id": "990e8400-e29b-41d4-a716-446655440004",
+  "created_at": "2024-01-20T10:00:00.000Z",
+  "prefill_data": [
+    {"id": "el_email_1", "value": "a@x.com"}
+  ]
+}
+```
+
+**Response Fields**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Unique link identifier (UUID) |
+| `entry_name` | string | Recipient/entry name |
+| `status` | string | Submission status: `pending`, `in_progress`, or `completed` |
+| `active` | boolean | Whether the link is active |
+| `expires_at` | string | ISO 8601 expiration timestamp, or `null` |
+| `url` | string | Survey URL for this unique link |
+| `prefill_id` | string | UUID of the linked prefill, or `null` |
+| `created_at` | string | ISO 8601 creation timestamp |
+| `prefill_data` | array | Linked prefill's `{id, value}` data (only when `include_prefill_data=true`) |
+
+If the unique link cannot be found:
+
+```http
+HTTP/1.1 404 Not Found
+
+{
+  "message": "Unique link not found"
+}
+```
 
 ---
 
