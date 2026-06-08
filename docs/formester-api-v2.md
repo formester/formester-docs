@@ -501,8 +501,6 @@ Prefills let you pre-populate a form's fields for a recipient by passing a `_pre
 
 > Each prefill's `data` is an array of `{id, value}` pairs, where `id` is a form element's ID. Use [Get Form](#get-form) (`GET /api/v2/forms/:id`) to look up a form's `elements[].id` values before constructing `data`.
 
-**Note:** Response keys for prefill and unique link endpoints are returned in `snake_case`, unlike the `forms` and `submissions` endpoints which use `camelCase`.
-
 #### List Prefills
 
 Retrieve a paginated list of prefills for a form.
@@ -550,12 +548,12 @@ Content-Type: application/json
       "id": "990e8400-e29b-41d4-a716-446655440004",
       "name": "John Doe",
       "url": "https://app.formester.com/f/550e8400-e29b-41d4-a716-446655440000?_prefill=990e8400-e29b-41d4-a716-446655440004",
-      "created_at": "2024-01-20T10:00:00.000Z"
+      "createdAt": "2024-01-20T10:00:00.000Z"
     }
   ],
   "meta": {
     "page": 1,
-    "per_page": 20,
+    "perPage": 20,
     "total": 1
   }
 }
@@ -569,9 +567,9 @@ Content-Type: application/json
 | `prefills[].id` | string | Unique prefill identifier (UUID) |
 | `prefills[].name` | string | Prefill name |
 | `prefills[].url` | string | Survey URL with the `_prefill` query parameter applied |
-| `prefills[].created_at` | string | ISO 8601 creation timestamp |
+| `prefills[].createdAt` | string | ISO 8601 creation timestamp |
 | `meta.page` | integer | Current page number |
-| `meta.per_page` | integer | Items per page |
+| `meta.perPage` | integer | Items per page |
 | `meta.total` | integer | Total number of prefills |
 
 ---
@@ -614,7 +612,7 @@ Content-Type: application/json
   "id": "990e8400-e29b-41d4-a716-446655440004",
   "name": "John Doe",
   "url": "https://app.formester.com/f/550e8400-e29b-41d4-a716-446655440000?_prefill=990e8400-e29b-41d4-a716-446655440004",
-  "created_at": "2024-01-20T10:00:00.000Z",
+  "createdAt": "2024-01-20T10:00:00.000Z",
   "data": [
     {"id": "el_name_1", "value": "John Doe"},
     {"id": "el_email_1", "value": "john@example.com"}
@@ -629,7 +627,7 @@ Content-Type: application/json
 | `id` | string | Unique prefill identifier (UUID) |
 | `name` | string | Prefill name |
 | `url` | string | Survey URL with the `_prefill` query parameter applied |
-| `created_at` | string | ISO 8601 creation timestamp |
+| `createdAt` | string | ISO 8601 creation timestamp |
 | `data` | array | Array of `{id, value}` pairs mapping form element IDs to prefill values |
 
 If the prefill cannot be found:
@@ -700,7 +698,7 @@ Content-Type: application/json
 {
   "prefills": [
     {
-      "prefill_id": "990e8400-e29b-41d4-a716-446655440004",
+      "prefillId": "990e8400-e29b-41d4-a716-446655440004",
       "url": "https://app.formester.com/f/550e8400-e29b-41d4-a716-446655440000?_prefill=990e8400-e29b-41d4-a716-446655440004",
       "name": "John Doe"
     }
@@ -713,7 +711,7 @@ Content-Type: application/json
 | Field | Type | Description |
 |-------|------|-------------|
 | `prefills` | array | Array of created prefill objects |
-| `prefills[].prefill_id` | string | Unique prefill identifier (UUID) |
+| `prefills[].prefillId` | string | Unique prefill identifier (UUID) |
 | `prefills[].url` | string | Survey URL with the `_prefill` query parameter applied |
 | `prefills[].name` | string | Prefill name |
 
@@ -792,7 +790,7 @@ HTTP/1.1 422 Unprocessable Entity
 
 {
   "error": "Prefill IDs not found",
-  "not_found_ids": ["aa0e8400-e29b-41d4-a716-446655440005"]
+  "notFoundIds": ["aa0e8400-e29b-41d4-a716-446655440005"]
 }
 ```
 
@@ -854,24 +852,24 @@ Content-Type: application/json
 
 ```json
 {
-  "unique_links": [
+  "uniqueLinks": [
     {
       "id": "bb0e8400-e29b-41d4-a716-446655440006",
-      "entry_name": "Onboarding Link",
+      "entryName": "Onboarding Link",
       "status": "pending",
       "active": true,
-      "expires_at": "2024-03-01T00:00:00.000Z",
+      "expiresAt": "2024-03-01T00:00:00.000Z",
       "url": "https://app.formester.com/u/bb0e8400-e29b-41d4-a716-446655440006",
-      "prefill_id": "990e8400-e29b-41d4-a716-446655440004",
-      "created_at": "2024-01-20T10:00:00.000Z",
-      "prefill_data": [
+      "prefillId": "990e8400-e29b-41d4-a716-446655440004",
+      "createdAt": "2024-01-20T10:00:00.000Z",
+      "prefillData": [
         {"id": "el_email_1", "value": "a@x.com"}
       ]
     }
   ],
   "meta": {
     "page": 1,
-    "per_page": 20,
+    "perPage": 20,
     "total": 1
   }
 }
@@ -881,18 +879,18 @@ Content-Type: application/json
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `unique_links` | array | Array of unique link objects |
-| `unique_links[].id` | string | Unique link identifier (UUID) |
-| `unique_links[].entry_name` | string | Recipient/entry name |
-| `unique_links[].status` | string | Submission status: `pending`, `in_progress`, or `completed` |
-| `unique_links[].active` | boolean | Whether the link is active |
-| `unique_links[].expires_at` | string | ISO 8601 expiration timestamp, or `null` |
-| `unique_links[].url` | string | Survey URL for this unique link |
-| `unique_links[].prefill_id` | string | UUID of the linked prefill, or `null` |
-| `unique_links[].created_at` | string | ISO 8601 creation timestamp |
-| `unique_links[].prefill_data` | array | Linked prefill's `{id, value}` data (only when `include_prefill_data=true`) |
+| `uniqueLinks` | array | Array of unique link objects |
+| `uniqueLinks[].id` | string | Unique link identifier (UUID) |
+| `uniqueLinks[].entryName` | string | Recipient/entry name |
+| `uniqueLinks[].status` | string | Submission status: `pending`, `in_progress`, or `completed` |
+| `uniqueLinks[].active` | boolean | Whether the link is active |
+| `uniqueLinks[].expiresAt` | string | ISO 8601 expiration timestamp, or `null` |
+| `uniqueLinks[].url` | string | Survey URL for this unique link |
+| `uniqueLinks[].prefillId` | string | UUID of the linked prefill, or `null` |
+| `uniqueLinks[].createdAt` | string | ISO 8601 creation timestamp |
+| `uniqueLinks[].prefillData` | array | Linked prefill's `{id, value}` data (only when `include_prefill_data=true`) |
 | `meta.page` | integer | Current page number |
-| `meta.per_page` | integer | Items per page |
+| `meta.perPage` | integer | Items per page |
 | `meta.total` | integer | Total number of unique links |
 
 ---
@@ -939,14 +937,14 @@ Content-Type: application/json
 ```json
 {
   "id": "bb0e8400-e29b-41d4-a716-446655440006",
-  "entry_name": "Onboarding Link",
+  "entryName": "Onboarding Link",
   "status": "pending",
   "active": true,
-  "expires_at": "2024-03-01T00:00:00.000Z",
+  "expiresAt": "2024-03-01T00:00:00.000Z",
   "url": "https://app.formester.com/u/bb0e8400-e29b-41d4-a716-446655440006",
-  "prefill_id": "990e8400-e29b-41d4-a716-446655440004",
-  "created_at": "2024-01-20T10:00:00.000Z",
-  "prefill_data": [
+  "prefillId": "990e8400-e29b-41d4-a716-446655440004",
+  "createdAt": "2024-01-20T10:00:00.000Z",
+  "prefillData": [
     {"id": "el_email_1", "value": "a@x.com"}
   ]
 }
@@ -957,14 +955,14 @@ Content-Type: application/json
 | Field | Type | Description |
 |-------|------|-------------|
 | `id` | string | Unique link identifier (UUID) |
-| `entry_name` | string | Recipient/entry name |
+| `entryName` | string | Recipient/entry name |
 | `status` | string | Submission status: `pending`, `in_progress`, or `completed` |
 | `active` | boolean | Whether the link is active |
-| `expires_at` | string | ISO 8601 expiration timestamp, or `null` |
+| `expiresAt` | string | ISO 8601 expiration timestamp, or `null` |
 | `url` | string | Survey URL for this unique link |
-| `prefill_id` | string | UUID of the linked prefill, or `null` |
-| `created_at` | string | ISO 8601 creation timestamp |
-| `prefill_data` | array | Linked prefill's `{id, value}` data (only when `include_prefill_data=true`) |
+| `prefillId` | string | UUID of the linked prefill, or `null` |
+| `createdAt` | string | ISO 8601 creation timestamp |
+| `prefillData` | array | Linked prefill's `{id, value}` data (only when `include_prefill_data=true`) |
 
 If the unique link cannot be found:
 
@@ -1033,13 +1031,13 @@ Content-Type: application/json
 
 ```json
 {
-  "unique_links": [
+  "uniqueLinks": [
     {
       "id": "bb0e8400-e29b-41d4-a716-446655440006",
-      "entry_name": "Jane Smith",
+      "entryName": "Jane Smith",
       "url": "https://app.formester.com/u/bb0e8400-e29b-41d4-a716-446655440006",
-      "expires_at": "2024-03-01T00:00:00.000Z",
-      "prefill_id": "990e8400-e29b-41d4-a716-446655440004"
+      "expiresAt": "2024-03-01T00:00:00.000Z",
+      "prefillId": "990e8400-e29b-41d4-a716-446655440004"
     }
   ]
 }
@@ -1049,12 +1047,12 @@ Content-Type: application/json
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `unique_links` | array | Array of created unique link objects |
-| `unique_links[].id` | string | Unique link identifier (UUID) |
-| `unique_links[].entry_name` | string | Recipient/entry name |
-| `unique_links[].url` | string | Survey URL for this unique link |
-| `unique_links[].expires_at` | string | ISO 8601 expiration timestamp, or `null` |
-| `unique_links[].prefill_id` | string | UUID of the created prefill, or `null` if no `prefill_data` was supplied |
+| `uniqueLinks` | array | Array of created unique link objects |
+| `uniqueLinks[].id` | string | Unique link identifier (UUID) |
+| `uniqueLinks[].entryName` | string | Recipient/entry name |
+| `uniqueLinks[].url` | string | Survey URL for this unique link |
+| `uniqueLinks[].expiresAt` | string | ISO 8601 expiration timestamp, or `null` |
+| `uniqueLinks[].prefillId` | string | UUID of the created prefill, or `null` if no `prefill_data` was supplied |
 
 **Validation Errors**
 
@@ -1135,13 +1133,13 @@ Content-Type: application/json
 ```json
 {
   "id": "bb0e8400-e29b-41d4-a716-446655440006",
-  "entry_name": "Jane S.",
+  "entryName": "Jane S.",
   "status": "pending",
   "active": false,
-  "expires_at": "2024-03-01T00:00:00.000Z",
+  "expiresAt": "2024-03-01T00:00:00.000Z",
   "url": "https://app.formester.com/u/bb0e8400-e29b-41d4-a716-446655440006",
-  "prefill_id": "990e8400-e29b-41d4-a716-446655440004",
-  "created_at": "2024-01-20T10:00:00.000Z"
+  "prefillId": "990e8400-e29b-41d4-a716-446655440004",
+  "createdAt": "2024-01-20T10:00:00.000Z"
 }
 ```
 
@@ -1232,7 +1230,7 @@ HTTP/1.1 422 Unprocessable Entity
 
 {
   "error": "Unique link IDs not found",
-  "not_found_ids": ["cc0e8400-e29b-41d4-a716-446655440007"]
+  "notFoundIds": ["cc0e8400-e29b-41d4-a716-446655440007"]
 }
 ```
 
