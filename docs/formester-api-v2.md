@@ -251,8 +251,8 @@ Content-Type: application/json
       "label": "Favourite Colour",
       "type": "dropdown",
       "options": [
-        {"label": "Red", "value": "red"},
-        {"label": "Blue", "value": "blue"}
+        {"id": "opt-uuid-abc123", "label": "Red", "value": "red"},
+        {"id": "opt-uuid-def456", "label": "Blue", "value": "blue"}
       ]
     }
   ]
@@ -272,7 +272,7 @@ Content-Type: application/json
 | `elements[].id` | string | Element ID — use this as `prefill_data[].id` when prefilling this field |
 | `elements[].label` | string | Element label |
 | `elements[].type` | string | Element type (e.g. `short-text`, `email`, `dropdown`, `matrix`, `repeat-field`, `name`, `address`, `phone`) |
-| `elements[].options` | array | `{label, value}` choices, present for choice-based types (`radio`, `multiple-checkbox`, `dropdown`, `picture-checkbox`, `ranking`) |
+| `elements[].options` | array | `{id, label, value}` choices, present for choice-based types (`radio`, `multiple-checkbox`, `dropdown`, `picture-checkbox`, `ranking`) — use `id` when prefilling these fields |
 | `elements[].rows` / `elements[].columns` | array | Row/column definitions, present for `matrix` elements |
 | `elements[].components` | array | Nested element list, present for `repeat-field` elements |
 | `elements[].children` | array | Nested `{fixedname, label, required}` sub-fields, present for `name`/`address` elements |
@@ -1034,6 +1034,25 @@ Content-Type: application/json
 | `uniqueLinks[].url` | string | Survey URL for this unique link |
 | `uniqueLinks[].expiresAt` | string | ISO 8601 expiration timestamp, or `null` |
 | `uniqueLinks[].prefillId` | string | UUID of the created prefill, or `null` if no `prefill_data` was supplied |
+
+**Field Value Formats**
+
+The format of each `prefill_data[].value` depends on the element type. Use [Get Form](#get-form) (`GET /api/v2/forms/:id`) to discover element types along with their option, row, and column IDs before constructing `prefill_data`.
+
+| Field type | Value format | Example |
+|------------|--------------|---------|
+| `short-text`, `long-text`, `email`, `number`, `date`, `hidden` | Plain string or number | `"Jane Smith"` |
+| `phone` | String — see [Phone field values](#phone-field-values) for accepted formats | `"+1-4155550123"` |
+| `radio`, `dropdown`, `picture-checkbox` | Option **ID** string (from `elements[].options[].id`) | `"opt-uuid-abc123"` |
+| `multiple-checkbox`, `ranking` | Array of option **ID** strings | `["opt-uuid-abc123", "opt-uuid-def456"]` |
+| `matrix` | Object keyed by row ID → object keyed by column ID → cell value | `{"row-uuid-1": {"col-uuid-a": "Yes", "col-uuid-b": "No"}}` |
+| `repeat-field` | Array of objects; each object maps component element IDs to their values (one object per repeated row) | `[{"comp-uuid-1": "Jane", "comp-uuid-2": "Doe"}, {"comp-uuid-1": "John", "comp-uuid-2": "Smith"}]` |
+
+> **Choices fields** (`radio`, `dropdown`, `multiple-checkbox`, `picture-checkbox`, `ranking`): pass the option `id` returned by Get Form in `elements[].options[].id` — not the human-readable `label` or `value`.
+
+> **Matrix**: outer keys are row `id` values from `elements[].rows`; inner keys are column `id` values from `elements[].columns`.
+
+> **Repeat field**: each array entry represents one repeated row. Keys are the component element `id` values from `elements[].components`.
 
 **Validation Errors**
 
