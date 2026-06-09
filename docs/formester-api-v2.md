@@ -271,7 +271,7 @@ Content-Type: application/json
 | `elements` | array | Form's element tree (flattened to the fields below) |
 | `elements[].id` | string | Element ID — use this as `prefill_data[].id` when prefilling this field |
 | `elements[].label` | string | Element label |
-| `elements[].type` | string | Element type (e.g. `short-text`, `email`, `dropdown`, `matrix`, `repeat-field`, `name`, `address`) |
+| `elements[].type` | string | Element type (e.g. `short-text`, `email`, `dropdown`, `matrix`, `repeat-field`, `name`, `address`, `phone`) |
 | `elements[].options` | array | `{label, value}` choices, present for choice-based types (`radio`, `multiple-checkbox`, `dropdown`, `picture-checkbox`, `ranking`) |
 | `elements[].rows` / `elements[].columns` | array | Row/column definitions, present for `matrix` elements |
 | `elements[].components` | array | Nested element list, present for `repeat-field` elements |
@@ -1298,6 +1298,18 @@ These errors can occur on any endpoint that accepts a `prefill_data` array (Bulk
 | 400 | `prefill_data[0].value must be an array for 'multiple-checkbox' field` | Multi-select fields require an array value |
 | 400 | `prefill_data[0].value must be a hash for 'matrix' field` | Matrix fields require an object value |
 | 400 | `prefill_data[0].value must be an array for 'repeat-field'` | Repeat fields require an array value |
+
+#### Phone field values
+
+For `phone` elements, pass the value as a string. The accepted formats are:
+
+| Format | Example | When to use |
+|--------|---------|-------------|
+| `{dialCode}-{localNumber}` | `"+91-9876543210"` | Field has country selector enabled — dial code prefix is stripped and the country is resolved automatically |
+| `{dialCode}{localNumber}` | `"+919876543210"` | Same as above; the hyphen separator is optional |
+| Local digits only | `"9876543210"` | Field has country selector disabled — value is stored as-is |
+
+When the country selector is enabled, the dial code is matched longest-prefix-first against the E.164 dial code list. `+1` always resolves to the United States. Whitespace is stripped before matching; non-digit characters other than a leading `+` are removed from the local number.
 
 Use [Get Form](#get-form) (`GET /api/v2/forms/:id`) to look up valid element IDs and their types before constructing `prefill_data`.
 
