@@ -665,7 +665,7 @@ POST /api/v2/forms/:form_uuid/prefills
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `prefills` | array | Yes | Array of prefill objects to create |
-| `prefills[].name` | string | No | Prefill name (defaults to a generated UUID) |
+| `prefills[].name` | string | Yes | Prefill name |
 | `prefills[].prefill_data` | array | Yes | Array of `{id, value}` pairs mapping form element IDs to prefill values |
 
 **cURL Example**
@@ -717,21 +717,14 @@ Content-Type: application/json
 
 **Validation Errors**
 
-```http
-HTTP/1.1 400 Bad Request
+| Status | Error message | Notes |
+|--------|---------------|-------|
+| 400 | `prefills is required and must be an array` | Body missing or not an array |
+| 400 | `too many prefills (max 100)` | Batch exceeds limit |
+| 400 | `prefills[0].name is required` | `name` is mandatory for every item |
+| 400 | `prefills[0].prefill_data is required and must be an array` | `prefill_data` is mandatory and must be an array |
 
-{
-  "error": "prefills is required and must be an array"
-}
-```
-
-```http
-HTTP/1.1 400 Bad Request
-
-{
-  "error": "prefills[0].prefill_data is required and must be an array"
-}
-```
+For `prefill_data` structure errors (invalid element IDs, wrong value types) see [Prefill Data Errors](#prefill-data-errors).
 
 ---
 
@@ -783,24 +776,12 @@ Content-Type: application/json
 
 **Validation Errors**
 
-If any of the supplied IDs do not exist:
-
-```http
-HTTP/1.1 422 Unprocessable Entity
-
-{
-  "error": "Prefill IDs not found",
-  "notFoundIds": ["aa0e8400-e29b-41d4-a716-446655440005"]
-}
-```
-
-```http
-HTTP/1.1 400 Bad Request
-
-{
-  "error": "too many ids (max 100)"
-}
-```
+| Status | Error message | Notes |
+|--------|---------------|-------|
+| 400 | `ids is required` | Body missing `ids` key |
+| 400 | `ids must be an array` | `ids` is not an array |
+| 400 | `too many ids (max 100)` | Batch exceeds limit |
+| 422 | `{ "error": "Prefill IDs not found", "notFoundIds": [...] }` | One or more UUIDs not found |
 
 ---
 
@@ -1056,29 +1037,14 @@ Content-Type: application/json
 
 **Validation Errors**
 
-```http
-HTTP/1.1 400 Bad Request
-
-{
-  "error": "unique_links is required and must be an array"
-}
-```
-
-```http
-HTTP/1.1 400 Bad Request
-
-{
-  "error": "too many unique_links (max 100)"
-}
-```
-
-```http
-HTTP/1.1 422 Unprocessable Entity
-
-{
-  "error": "Duplicate entry_name for this form"
-}
-```
+| Status | Error message | Notes |
+|--------|---------------|-------|
+| 400 | `unique_links is required and must be an array` | Body missing or not an array |
+| 400 | `too many unique_links (max 100)` | Batch exceeds limit |
+| 400 | `unique_links[0].prefill_data must be an array` | See [Prefill Data Errors](#prefill-data-errors) for structure errors |
+| 400 | `unique_links[0].expires_at is not a valid date` | See [expires_at Errors](#expiresat-errors) |
+| 400 | `unique_links[0].expires_at must be in the future` | See [expires_at Errors](#expiresat-errors) |
+| 422 | `Duplicate entry_name for this form` | `entry_name` must be unique per form |
 
 ---
 
@@ -1106,7 +1072,7 @@ PATCH /api/v2/forms/:form_uuid/unique_links/:id
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `entry_name` | string | No | New recipient/entry name (must be unique per form; cannot be blank) |
-| `expires_at` | string | No | New ISO 8601 expiration timestamp |
+| `expires_at` | string\|null | No | New ISO 8601 expiration timestamp; pass `null` or empty string to remove expiry |
 | `active` | boolean | No | Whether the link is active |
 | `prefill_data` | array | No | Array of `{id, value}` pairs; replaces (or creates) the linked prefill's data |
 
@@ -1149,29 +1115,14 @@ Same shape as a [list response](#list-unique-links) item (without `prefill_data`
 
 **Validation Errors**
 
-```http
-HTTP/1.1 400 Bad Request
-
-{
-  "error": "entry_name cannot be blank"
-}
-```
-
-```http
-HTTP/1.1 422 Unprocessable Entity
-
-{
-  "error": "Duplicate entry_name for this form"
-}
-```
-
-```http
-HTTP/1.1 404 Not Found
-
-{
-  "message": "Unique link not found"
-}
-```
+| Status | Error message | Notes |
+|--------|---------------|-------|
+| 400 | `entry_name cannot be blank` | `entry_name` key present but empty |
+| 400 | `prefill_data must be an array` | See [Prefill Data Errors](#prefill-data-errors) for structure errors |
+| 400 | `expires_at is not a valid date` | See [expires_at Errors](#expiresat-errors) |
+| 400 | `expires_at must be in the future` | See [expires_at Errors](#expiresat-errors) |
+| 422 | `Duplicate entry_name for this form` | `entry_name` must be unique per form |
+| 404 | `Unique link not found` | UUID not found or not accessible |
 
 ---
 
@@ -1223,24 +1174,12 @@ Content-Type: application/json
 
 **Validation Errors**
 
-If any of the supplied IDs do not exist:
-
-```http
-HTTP/1.1 422 Unprocessable Entity
-
-{
-  "error": "Unique link IDs not found",
-  "notFoundIds": ["cc0e8400-e29b-41d4-a716-446655440007"]
-}
-```
-
-```http
-HTTP/1.1 400 Bad Request
-
-{
-  "error": "too many ids (max 100)"
-}
-```
+| Status | Error message | Notes |
+|--------|---------------|-------|
+| 400 | `ids is required` | Body missing `ids` key |
+| 400 | `ids must be an array` | `ids` is not an array |
+| 400 | `too many ids (max 100)` | Batch exceeds limit |
+| 422 | `{ "error": "Unique link IDs not found", "notFoundIds": [...] }` | One or more UUIDs not found |
 
 ---
 
@@ -1346,6 +1285,36 @@ curl -X GET "https://app.formester.com/api/v2/submissions?form_uuid=550e8400-e29
 ---
 
 ## Error Codes
+
+### Prefill Data Errors
+
+These errors can occur on any endpoint that accepts a `prefill_data` array (Bulk Create Prefills, Bulk Create Unique Links, Update Unique Link).
+
+| Status | Error message | Cause |
+|--------|---------------|-------|
+| 400 | `prefill_data[0].id is required` | An entry in `prefill_data` is missing the `id` field |
+| 400 | `prefill_data[0].id 'el_unknown' does not exist in this form` | The element ID does not exist in the form |
+| 400 | `prefill_data[0].value must be a scalar for 'short-text' field` | Value type does not match the field type |
+| 400 | `prefill_data[0].value must be an array for 'multiple-checkbox' field` | Multi-select fields require an array value |
+| 400 | `prefill_data[0].value must be a hash for 'matrix' field` | Matrix fields require an object value |
+| 400 | `prefill_data[0].value must be an array for 'repeat-field'` | Repeat fields require an array value |
+
+Use [Get Form](#get-form) (`GET /api/v2/forms/:id`) to look up valid element IDs and their types before constructing `prefill_data`.
+
+---
+
+### expires_at Errors
+
+These errors can occur on any endpoint that accepts an `expires_at` value (Bulk Create Unique Links, Update Unique Link).
+
+| Status | Error message | Cause |
+|--------|---------------|-------|
+| 400 | `expires_at is not a valid date` (or `unique_links[0].expires_at is not a valid date`) | Value cannot be parsed as an ISO 8601 timestamp |
+| 400 | `expires_at must be in the future` (or `unique_links[0].expires_at must be in the future`) | Parsed date is in the past |
+
+To **remove** an existing expiry on a unique link, pass `"expires_at": null` (or an empty string) in the Update request.
+
+---
 
 ### HTTP Status Codes
 
