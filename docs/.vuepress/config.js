@@ -21,6 +21,7 @@ export default {
       '/formester-api-v2',
       '/paypal-integration',
       '/authorizenet-integration',
+      '/databricks-integration',
       '/formester-mcp-server',
     ],
   }),
