@@ -19,6 +19,7 @@ export default {
       '/formester-api',
       '/formester-api-v1',
       '/formester-api-v2',
+      '/make-integration-api',
       '/paypal-integration',
       '/authorizenet-integration',
       '/databricks-integration',
