@@ -37,7 +37,6 @@ Returns the connected user's profile. Used to validate and label a connection.
 Lists the forms the connected user can access (excludes trashed forms), most recently updated first.
 
 **Scope:** `forms:read`
-**Query params:** `limit` (1–100, default 100), `page` (for pagination)
 
 **Response `200`**
 ```json
