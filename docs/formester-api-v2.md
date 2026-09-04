@@ -332,9 +332,9 @@ curl -X GET "https://app.formester.com/api/v2/submissions?form_uuid=550e8400-e29
   -H "X-FORMESTER-TOKEN: your-access-token"
 
 # With filtering, by field label
-curl -G "https://app.formester.com/api/v2/submissions" \
-  --data-urlencode "form_uuid=550e8400-e29b-41d4-a716-446655440000" \
-  --data-urlencode "Rating__is_greater_than_or_equal_to=3" \
+curl -sG "https://app.formester.com/api/v2/submissions" \
+  -d "form_uuid=550e8400-e29b-41d4-a716-446655440000" \
+  -d "Rating__is_greater_than_or_equal_to=3" \
   -H "X-FORMESTER-TOKEN: your-access-token"
 
 # With sorting
@@ -1243,44 +1243,48 @@ Filtering requires `form_id` or `form_uuid` to be specified.
 
 ```bash
 # Filter by field label — exact match
-curl -G "https://app.formester.com/api/v2/submissions" \
-  --data-urlencode "form_uuid=550e8400-e29b-41d4-a716-446655440000" \
-  --data-urlencode "Sales Person__is_equal_to=Alice" \
+curl -sG "https://app.formester.com/api/v2/submissions" \
+  -d "form_uuid=550e8400-e29b-41d4-a716-446655440000" \
+  -d "Sales%20Person__is_equal_to=Alice" \
   -H "X-FORMESTER-TOKEN: your-access-token"
 
 # Filter by field label — contains
-curl -G "https://app.formester.com/api/v2/submissions" \
-  --data-urlencode "form_uuid=550e8400-e29b-41d4-a716-446655440000" \
-  --data-urlencode "Email__contains=@acme.com" \
+curl -sG "https://app.formester.com/api/v2/submissions" \
+  -d "form_uuid=550e8400-e29b-41d4-a716-446655440000" \
+  -d "Email__contains=@acme.com" \
   -H "X-FORMESTER-TOKEN: your-access-token"
 
 # Filter by field element ID instead of label (also works)
-curl -G "https://app.formester.com/api/v2/submissions" \
-  --data-urlencode "form_uuid=550e8400-e29b-41d4-a716-446655440000" \
-  --data-urlencode "el_email_1__contains=@acme.com" \
+curl -sG "https://app.formester.com/api/v2/submissions" \
+  -d "form_uuid=550e8400-e29b-41d4-a716-446655440000" \
+  -d "el_email_1__contains=@acme.com" \
   -H "X-FORMESTER-TOKEN: your-access-token"
 
 # Filter by rating range
-curl -G "https://app.formester.com/api/v2/submissions" \
-  --data-urlencode "form_uuid=550e8400-e29b-41d4-a716-446655440000" \
-  --data-urlencode "Rating__is_greater_than_or_equal_to=3" \
-  --data-urlencode "Rating__is_less_than_or_equal_to=5" \
+curl -sG "https://app.formester.com/api/v2/submissions" \
+  -d "form_uuid=550e8400-e29b-41d4-a716-446655440000" \
+  -d "Rating__is_greater_than_or_equal_to=3" \
+  -d "Rating__is_less_than_or_equal_to=5" \
   -H "X-FORMESTER-TOKEN: your-access-token"
 
 # Combine with sorting
-curl -G "https://app.formester.com/api/v2/submissions" \
-  --data-urlencode "form_uuid=550e8400-e29b-41d4-a716-446655440000" \
-  --data-urlencode "Rating__is_greater_than_or_equal_to=4" \
-  --data-urlencode "sort=created_at" \
-  --data-urlencode "order=desc" \
+curl -sG "https://app.formester.com/api/v2/submissions" \
+  -d "form_uuid=550e8400-e29b-41d4-a716-446655440000" \
+  -d "Rating__is_greater_than_or_equal_to=4" \
+  -d "sort=created_at" \
+  -d "order=desc" \
   -H "X-FORMESTER-TOKEN: your-access-token"
 ```
 
-> Using `-G --data-urlencode` (as above) is recommended for filter values, since it safely URL-encodes spaces and special characters in labels and values for you.
+> **A label containing spaces or other special characters must be percent-encoded in the key itself** (e.g. `Sales%20Person`, not `Sales Person`). `curl`'s `--data-urlencode "name=content"` form only encodes `content` — the part after the first `=` — not `name`, so it will silently produce a malformed request if the field name has a space in it. Use `-d "key=value"` with the key already encoded, as in the examples above, or build the query string yourself and encode both the key and the value.
 
 #### Duplicate Labels
 
-If two fields on the same form share the same label, filtering by that plain label targets the **first** matching field (top to bottom, in form order) — the same convention used by CSV export column headers. To target a later field with a duplicate label, use its disambiguated label as shown in your CSV export headers (e.g. `Email`, `Email (1)`, `Email (2)`, ...), or use the field's element ID instead (from [Get Form](#get-form)).
+If two fields on the same form share the same label, filtering by that plain label targets the **first** matching field (top to bottom, in form order). To target a later field with a duplicate label, use its disambiguated label the same way a CSV export's column headers do (e.g. `Email`, `Email (1)`, `Email (2)`, ...), or use the field's element ID instead (from [Get Form](#get-form)).
+
+#### Composite Fields (Name, Address)
+
+A composite field's individual sub-fields are filterable by their own label — e.g. `First Name__is_equal_to=Alice` — not by the parent field's label (`Full Name`), and not by the compound header CSV export uses for the same column (`Full Name_First Name`). Filtering directly on the composite field itself, rather than one of its sub-fields, is not currently supported.
 
 #### Unrecognized Filter Fields
 
@@ -1553,6 +1557,15 @@ HTTP/1.1 429 Too Many Requests
 6. **Cache responses** - Cache API responses where appropriate.
 
 7. **Handle errors gracefully** - Check for error responses and handle them appropriately.
+
+---
+
+## Changelog
+
+**2026-09** — Submission filtering:
+- Filter fields can now be addressed by label (e.g. `Sales Person__is_equal_to=...`) in addition to element ID. See [Filtering Submissions](#filtering-submissions).
+- An unrecognized filter field now returns `400 Bad Request` instead of silently returning every submission. See [Unrecognized Filter Fields](#unrecognized-filter-fields).
+- **Behavior change:** as a consequence of the above, a builder-style filter (`field__filter_type`, no `custom`/`form_variable`/`email` column source) on a form with no matching field — including a form whose builder has no fields at all yet — now returns `400` instead of `200` with every submission unfiltered.
 
 ---
 
