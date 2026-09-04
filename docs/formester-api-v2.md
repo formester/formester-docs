@@ -1276,7 +1276,7 @@ curl -sG "https://app.formester.com/api/v2/submissions" \
   -H "X-FORMESTER-TOKEN: your-access-token"
 ```
 
-> **A label containing spaces or other special characters must be percent-encoded in the key itself** (e.g. `Sales%20Person`, not `Sales Person`). `curl`'s `--data-urlencode "name=content"` form only encodes `content` — the part after the first `=` — not `name`, so it will silently produce a malformed request if the field name has a space in it. Use `-d "key=value"` with the key already encoded, as in the examples above, or build the query string yourself and encode both the key and the value.
+> A label containing spaces or other special characters must be percent-encoded in the key itself, e.g. `Sales%20Person__is_equal_to=Alice`, not `Sales Person__is_equal_to=Alice` — as in the examples above.
 
 #### Duplicate Labels
 
