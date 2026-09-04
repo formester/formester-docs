@@ -1282,6 +1282,20 @@ curl -G "https://app.formester.com/api/v2/submissions" \
 
 If two fields on the same form share the same label, filtering by that plain label targets the **first** matching field (top to bottom, in form order) — the same convention used by CSV export column headers. To target a later field with a duplicate label, use its disambiguated label as shown in your CSV export headers (e.g. `Email`, `Email (1)`, `Email (2)`, ...), or use the field's element ID instead (from [Get Form](#get-form)).
 
+#### Unrecognized Filter Fields
+
+If `field` doesn't match any field's label or element ID on the form, the request fails with `400 Bad Request` naming the field(s) that couldn't be resolved — it does **not** silently return every submission:
+
+```http
+HTTP/1.1 400 Bad Request
+
+{
+  "message": "Unknown filter field(s): Sales Persn"
+}
+```
+
+Double-check the label spelling (it's matched exactly, case-sensitive) against the form builder, or use [Get Form](#get-form) to confirm the field's element ID.
+
 ### Sorting
 
 Use the `sort` and `order` parameters to control result ordering.
@@ -1400,7 +1414,7 @@ To **remove** an existing expiry on a unique link, pass `"expires_at": null` (or
 | Status Code | Description |
 |-------------|-------------|
 | 200 | Success |
-| 400 | Bad Request - Invalid token format or missing header |
+| 400 | Bad Request - Invalid token format or missing header, or an [unrecognized filter field](#unrecognized-filter-fields) |
 | 401 | Unauthorized - Invalid or inactive token |
 | 403 | Forbidden - Token lacks required scope |
 | 404 | Not Found - Resource not found or not authorized |
