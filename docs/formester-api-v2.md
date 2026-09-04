@@ -310,13 +310,9 @@ GET /api/v2/submissions
 | `page` | integer | No | 1 | Page number |
 | `form_id` | integer | **Yes*** | - | Form numeric ID |
 | `form_uuid` | string | **Yes*** | - | Form UUID |
-| `sort` | string | No | - | Field name to sort by |
-| `order` | string | No | `asc` | Sort order: `asc` or `desc` |
-| `{field}` | string | No | - | Filter by exact match |
-| `{field}__gte` | string | No | - | Filter: greater than or equal |
-| `{field}__gt` | string | No | - | Filter: greater than |
-| `{field}__lte` | string | No | - | Filter: less than or equal |
-| `{field}__lt` | string | No | - | Filter: less than |
+| `sort` | string | No | `created_at` | Column to sort by: `created_at`, `updated_at`, or `duration` |
+| `order` | string | No | `desc` | Sort order: `asc` or `desc` |
+| `{field}__{filter_type}` | string | No | - | Filter by field value — see [Filtering & Sorting](#filtering-sorting) |
 
 *Either `form_id` or `form_uuid` is required. Use `form_id` for numeric ID or `form_uuid` for UUID.
 
@@ -335,8 +331,10 @@ curl -X GET "https://app.formester.com/api/v2/submissions?form_id=123" \
 curl -X GET "https://app.formester.com/api/v2/submissions?form_uuid=550e8400-e29b-41d4-a716-446655440000&page=2" \
   -H "X-FORMESTER-TOKEN: your-access-token"
 
-# With filtering
-curl -X GET "https://app.formester.com/api/v2/submissions?form_uuid=550e8400-e29b-41d4-a716-446655440000&Rating__gte=3" \
+# With filtering, by field label
+curl -sG "https://app.formester.com/api/v2/submissions" \
+  -d "form_uuid=550e8400-e29b-41d4-a716-446655440000" \
+  -d "Rating__is_greater_than_or_equal_to=3" \
   -H "X-FORMESTER-TOKEN: your-access-token"
 
 # With sorting
@@ -1206,44 +1204,112 @@ Content-Type: application/json
 
 ### Filtering Submissions
 
-The API supports powerful filtering capabilities using field-based operators.
+Every filter is passed as a single compound query parameter, in the form:
 
-**Note:** Field-based filtering (using operators like `__gte`, `__lt`, etc.) requires `form_id` or `form_uuid` to be specified.
+```
+<field>__<filter_type>=<value>
+```
 
-#### Filter Operators
+- **`field`** — the form field's **label**, exactly as shown in the form builder (e.g. `Sales Person`), or its element **ID** (from [Get Form](#get-form)'s `elements[].id`). Both work identically.
+- **`filter_type`** — one of the operators below.
 
-| Operator | Syntax | Description | Example |
-|----------|--------|-------------|---------|
-| Equals/Like | `{field}=value` | Exact match or substring | `email=john@example.com` |
-| Greater than or equal | `{field}__gte=value` | >= comparison | `Rating__gte=3` |
-| Greater than | `{field}__gt=value` | > comparison | `Rating__gt=3` |
-| Less than or equal | `{field}__lte=value` | <= comparison | `Rating__lte=5` |
-| Less than | `{field}__lt=value` | < comparison | `Rating__lt=5` |
+Filtering requires `form_id` or `form_uuid` to be specified.
+
+> **A bare `field=value` (no `__filter_type`) is not a valid filter and is silently ignored** — always include the filter type, e.g. `Rating__is_equal_to=5`.
+
+#### Filter Types
+
+| Filter type | Description | Example |
+|-------------|-------------|---------|
+| `is_equal_to` | Exact match | `Sales Person__is_equal_to=Alice` |
+| `is_not_equal_to` | Does not match | `Status__is_not_equal_to=Closed` |
+| `contains` | Substring match | `Email__contains=@acme.com` |
+| `does_not_contain` | Substring does not match | `Email__does_not_contain=@spam.com` |
+| `is_greater_than` | Numeric/date, > | `Rating__is_greater_than=3` |
+| `is_greater_than_or_equal_to` | Numeric/date, >= | `Rating__is_greater_than_or_equal_to=3` |
+| `is_less_than` | Numeric/date, < | `Rating__is_less_than=5` |
+| `is_less_than_or_equal_to` | Numeric/date, <= | `Rating__is_less_than_or_equal_to=5` |
+| `before` | Date before | `Created%20Date__before=2024-06-01` |
+| `after` | Date after | `Created%20Date__after=2024-01-01` |
+| `on` | Date equals | `Created%20Date__on=2024-03-15` |
+| `not_on` | Date does not equal | `Created%20Date__not_on=2024-03-15` |
+| `is_empty` | Field has no value | `Notes__is_empty=true` |
+| `is_filled` | Field has a value | `Notes__is_filled=true` |
+| `is_in` | Value is one of a comma-separated list | `Status__is_in=Open,Pending` |
+| `is_not_in` | Value is not one of a comma-separated list | `Status__is_not_in=Closed,Archived` |
+| `in_range` | Numeric/date range, comma-separated `min,max` | `Rating__in_range=3,5` |
 
 #### Filter Examples
 
 ```bash
-# Filter by form using UUID
-curl -X GET "https://app.formester.com/api/v2/submissions?form_uuid=550e8400-e29b-41d4-a716-446655440000" \
+# Filter by field label — exact match
+curl -sG "https://app.formester.com/api/v2/submissions" \
+  -d "form_uuid=550e8400-e29b-41d4-a716-446655440000" \
+  -d "Sales%20Person__is_equal_to=Alice" \
+  -H "X-FORMESTER-TOKEN: your-access-token"
+
+# Filter by field label — contains
+curl -sG "https://app.formester.com/api/v2/submissions" \
+  -d "form_uuid=550e8400-e29b-41d4-a716-446655440000" \
+  -d "Email__contains=@acme.com" \
+  -H "X-FORMESTER-TOKEN: your-access-token"
+
+# Filter by field element ID instead of label (also works)
+curl -sG "https://app.formester.com/api/v2/submissions" \
+  -d "form_uuid=550e8400-e29b-41d4-a716-446655440000" \
+  -d "el_email_1__contains=@acme.com" \
   -H "X-FORMESTER-TOKEN: your-access-token"
 
 # Filter by rating range
-curl -X GET "https://app.formester.com/api/v2/submissions?form_uuid=550e8400-e29b-41d4-a716-446655440000&Rating__gte=3&Rating__lte=5" \
+curl -sG "https://app.formester.com/api/v2/submissions" \
+  -d "form_uuid=550e8400-e29b-41d4-a716-446655440000" \
+  -d "Rating__is_greater_than_or_equal_to=3" \
+  -d "Rating__is_less_than_or_equal_to=5" \
   -H "X-FORMESTER-TOKEN: your-access-token"
 
 # Combine with sorting
-curl -X GET "https://app.formester.com/api/v2/submissions?form_uuid=550e8400-e29b-41d4-a716-446655440000&Rating__gte=4&sort=created_at&order=desc" \
+curl -sG "https://app.formester.com/api/v2/submissions" \
+  -d "form_uuid=550e8400-e29b-41d4-a716-446655440000" \
+  -d "Rating__is_greater_than_or_equal_to=4" \
+  -d "sort=created_at" \
+  -d "order=desc" \
   -H "X-FORMESTER-TOKEN: your-access-token"
 ```
+
+> A label containing spaces or other special characters must be percent-encoded in the key itself, e.g. `Sales%20Person__is_equal_to=Alice`, not `Sales Person__is_equal_to=Alice` — as in the examples above.
+
+#### Duplicate Labels
+
+If two fields on the same form share the same label, which one filtering by that label resolves to is **not guaranteed**. If your form has fields with duplicate labels, use the field's element ID instead (from [Get Form](#get-form)) to filter on a specific one.
+
+#### Composite Fields (Name, Address)
+
+A composite field's individual sub-fields are filterable by their own label — e.g. `First Name__is_equal_to=Alice` — not by the parent field's label (`Full Name`), and not by the compound header CSV export uses for the same column (`Full Name_First Name`). Filtering directly on the composite field itself, rather than one of its sub-fields, is not currently supported.
+
+#### Unrecognized Filter Fields
+
+If `field` doesn't match any field's label or element ID on the form, the request fails with `400 Bad Request` naming the field(s) that couldn't be resolved — it does **not** silently return every submission:
+
+```http
+HTTP/1.1 400 Bad Request
+
+{
+  "message": "Unknown filter field(s): Sales Persn"
+}
+```
+
+Double-check the label spelling (it's matched exactly, case-sensitive) against the form builder, or use [Get Form](#get-form) to confirm the field's element ID.
 
 ### Sorting
 
 Use the `sort` and `order` parameters to control result ordering.
 
-| Parameter | Values | Description |
-|-----------|--------|-------------|
-| `sort` | Any field name | Field to sort by |
-| `order` | `asc`, `desc` | Sort direction (default: `asc`) |
+| Parameter | Values | Default | Description |
+|-----------|--------|---------|-------------|
+| `sort` | `created_at`, `updated_at`, `duration` | `created_at` | Column to sort by |
+| `order` | `asc`, `desc` | `desc` | Sort direction |
+
+Any other `sort` value falls back to `created_at desc`.
 
 ```bash
 # Sort by creation date, newest first
@@ -1352,7 +1418,7 @@ To **remove** an existing expiry on a unique link, pass `"expires_at": null` (or
 | Status Code | Description |
 |-------------|-------------|
 | 200 | Success |
-| 400 | Bad Request - Invalid token format or missing header |
+| 400 | Bad Request - Invalid token format or missing header, or an [unrecognized filter field](#unrecognized-filter-fields) |
 | 401 | Unauthorized - Invalid or inactive token |
 | 403 | Forbidden - Token lacks required scope |
 | 404 | Not Found - Resource not found or not authorized |
@@ -1491,6 +1557,15 @@ HTTP/1.1 429 Too Many Requests
 6. **Cache responses** - Cache API responses where appropriate.
 
 7. **Handle errors gracefully** - Check for error responses and handle them appropriately.
+
+---
+
+## Changelog
+
+**2026-09** — Submission filtering:
+- Filter fields can now be addressed by label (e.g. `Sales Person__is_equal_to=...`) in addition to element ID. See [Filtering Submissions](#filtering-submissions).
+- An unrecognized filter field now returns `400 Bad Request` instead of silently returning every submission. See [Unrecognized Filter Fields](#unrecognized-filter-fields).
+- **Behavior change:** as a consequence of the above, a builder-style filter (`field__filter_type`, no `custom`/`form_variable`/`email` column source) on a form with no matching field — including a form whose builder has no fields at all yet — now returns `400` instead of `200` with every submission unfiltered.
 
 ---
 
