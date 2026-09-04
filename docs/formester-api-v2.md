@@ -1280,7 +1280,7 @@ curl -sG "https://app.formester.com/api/v2/submissions" \
 
 #### Duplicate Labels
 
-If two fields on the same form share the same label, filtering by that plain label targets the **first** matching field (top to bottom, in form order). To target a later field with a duplicate label, use its disambiguated label the same way a CSV export's column headers do (e.g. `Email`, `Email (1)`, `Email (2)`, ...), or use the field's element ID instead (from [Get Form](#get-form)).
+If two fields on the same form share the same label, which one filtering by that label resolves to is **not guaranteed**. If your form has fields with duplicate labels, use the field's element ID instead (from [Get Form](#get-form)) to filter on a specific one.
 
 #### Composite Fields (Name, Address)
 
