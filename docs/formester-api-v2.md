@@ -2,15 +2,7 @@
 
 ## Introduction
 
-Formester API v2 is a powerful REST API that provides access to your forms and submissions. V2 introduces organization-level access and improved response formats.
-
-## What's New in V2
-
-| Feature | V1 | V2 |
-|---------|----|----|
-| Token scope | Form-level | Organization-level |
-| Pagination | Fixed 20/page | Fixed 20/page |
-| Response format | `results` array | Named arrays + `meta` |
+Formester API v2 is a powerful REST API that provides access to your forms and submissions. V2 tokens are organization-level and can be limited to selected forms.
 
 ---
 
@@ -1497,48 +1489,6 @@ HTTP/1.1 429 Too Many Requests
   "message": "You have exceeded api rate limit"
 }
 ```
-
----
-
-## Migration Guide from V1
-
-### Key Changes
-
-1. **Token Type**: V2 tokens are organization-scoped, not form-scoped.
-2. **Response Format**: V2 uses named arrays (`forms`, `submissions`) with a `meta` object.
-3. **Pagination**: Both V1 and V2 use fixed 20 items per page.
-
-### Response Format Comparison
-
-**V1 Response:**
-```json
-{
-  "count": 2,
-  "total_count": 100,
-  "per_page": 20,
-  "page": 1,
-  "results": [...]
-}
-```
-
-**V2 Response:**
-```json
-{
-  "submissions": [...],
-  "meta": {
-    "totalCount": 100,
-    "page": 1,
-    "perPage": 20
-  }
-}
-```
-
-### Migration Steps
-
-1. **Obtain a V2 token** - Contact support to get an organization-level V2 token.
-2. **Update endpoints** - Change `/api/v1/` to `/api/v2/` in your API calls.
-3. **Update response parsing** - Access data via named arrays (`forms`, `submissions`) instead of `results`.
-4. **Update pagination** - Access pagination info from the `meta` object.
 
 ---
 
