@@ -17,7 +17,6 @@ export default {
     sidebar: [
       '/guide/',
       '/formester-api',
-      '/formester-api-v1',
       '/formester-api-v2',
       '/make-integration-api',
       '/paypal-integration',
