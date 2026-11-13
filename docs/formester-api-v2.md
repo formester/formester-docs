@@ -32,6 +32,7 @@ https://app.formester.com/api/v2
 | GET | `/forms/:id` | `form.view` | Get a specific form, including its element IDs |
 | GET | `/submissions` | `submission.view` | List all submissions |
 | GET | `/submissions/:id` | `submission.view` | Get a specific submission |
+| GET | `/submissions/:id/pdf` | `submission.view` | Get a download link for a submission's PDF |
 | DELETE | `/submissions/:id` | `submission.delete` | Delete a submission |
 | GET | `/forms/:form_uuid/prefills` | `prefill.read` | List prefills for a form |
 | GET | `/forms/:form_uuid/prefills/:id` | `prefill.read` | Get a specific prefill |
@@ -75,7 +76,7 @@ V2 tokens use scopes to control access to API operations.
 | Scope | Description | Endpoints |
 |-------|-------------|-----------|
 | `form.view` | Read access to forms | GET /forms, GET /forms/:id |
-| `submission.view` | Read access to submissions | GET /submissions, GET /submissions/:id |
+| `submission.view` | Read access to submissions | GET /submissions, GET /submissions/:id, GET /submissions/:id/pdf |
 | `submission.delete` | Delete submissions | DELETE /submissions/:id |
 | `prefill.read` | Read access to prefills | GET /forms/:form_uuid/prefills, GET /forms/:form_uuid/prefills/:id |
 | `prefill.write` | Create and delete prefills | POST /forms/:form_uuid/prefills, DELETE /forms/:form_uuid/prefills |
@@ -450,6 +451,158 @@ Content-Type: application/json
   }
 }
 ```
+
+---
+
+#### Get Submission PDF
+
+Get a download link for a submission's PDF.
+
+The PDF is generated in the background, so this endpoint is meant to be polled. If the PDF does not exist yet, the call starts the generation and returns `202`. Call it again after the number of seconds in `retryAfter` until it returns `200` with a `downloadUrl`.
+
+A generated PDF is cached for a while, so a later call usually returns `200` straight away. The cache is not permanent, and editing the submission makes the next call generate a fresh PDF, so always be ready for a `202`.
+
+**Endpoint**
+
+```
+GET /api/v2/submissions/:id/pdf
+```
+
+**Required Scope:** `submission.view`
+
+Your plan must include PDF generation.
+
+**Path Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | string | Yes | Submission UUID |
+
+**Query Parameters**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `style` | string | No | Which PDF to generate. Defaults to the form's **Default PDF type** setting, or to `default` when that setting is empty or its style is not available for the form. |
+
+**Styles**
+
+| Value | Name in the dashboard | Availability |
+|-------|-----------------------|--------------|
+| `default` | Document layout | Every form |
+| `form_layout` | Form Layout | Every form |
+| `pdf_template` | Connected PDF | Forms with Connected PDF enabled, on a plan that includes it |
+| `custom_pdf` | Custom PDF | Forms with Custom PDF enabled |
+
+Asking for a style that is not available for the form returns `400`.
+
+**cURL Example**
+
+```bash
+# The form's default PDF
+curl -X GET "https://app.formester.com/api/v2/submissions/770e8400-e29b-41d4-a716-446655440002/pdf" \
+  -H "X-FORMESTER-TOKEN: your-access-token"
+
+# A specific style
+curl -X GET "https://app.formester.com/api/v2/submissions/770e8400-e29b-41d4-a716-446655440002/pdf?style=pdf_template" \
+  -H "X-FORMESTER-TOKEN: your-access-token"
+```
+
+**Response: the PDF is still being generated**
+
+```http
+HTTP/1.1 202 Accepted
+Content-Type: application/json
+Retry-After: 10
+```
+
+```json
+{
+  "status": "generating",
+  "style": "default",
+  "retryAfter": 10
+}
+```
+
+It is safe to call again while the PDF is generating.
+
+**Response: the PDF is ready**
+
+```http
+HTTP/1.1 200 OK
+Content-Type: application/json
+```
+
+```json
+{
+  "status": "ready",
+  "style": "default",
+  "downloadUrl": "https://example-bucket.s3.us-east-1.amazonaws.com/cache/pdfs/.../submission.pdf?X-Amz-Expires=3600&X-Amz-Signature=...",
+  "expiresAt": "2026-11-13T11:00:00Z"
+}
+```
+
+**Response Fields**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `status` | string | `ready`, `generating` or `failed` |
+| `style` | string | The style that was requested, or the form's default when `style` was omitted |
+| `downloadUrl` | string | Link to the PDF file. Only present when `status` is `ready`. |
+| `expiresAt` | string | When `downloadUrl` stops working, one hour after the response (ISO 8601). Only present when `status` is `ready`. |
+| `retryAfter` | integer | Seconds to wait before calling again. Present when `status` is `generating` or `failed`, and also sent as the `Retry-After` header. |
+
+Download the file with a plain `GET` on `downloadUrl`, using the URL exactly as returned. It needs no `X-FORMESTER-TOKEN` header, so don't send your token to it. If the link has expired, call the endpoint again for a new one.
+
+**Response: the generation failed**
+
+```http
+HTTP/1.1 500 Internal Server Error
+Content-Type: application/json
+Retry-After: 60
+```
+
+```json
+{
+  "status": "failed",
+  "style": "default",
+  "retryAfter": 60
+}
+```
+
+Calls made before `retryAfter` has passed return the same failure, with the time that is left. The first call after it starts a new attempt. The wait starts at 60 seconds and doubles each time the same PDF fails again, up to one hour.
+
+**Errors**
+
+| HTTP | Message | When |
+|------|---------|------|
+| 400 | `Invalid style. Use one of: default, form_layout, pdf_template, custom_pdf` | `style` is not one of the four values |
+| 400 | `The pdf_template style is not available for this form` | The requested style (`pdf_template` or `custom_pdf`, named in the message) is not available for the form |
+| 403 | `Your plan does not support submission PDFs` | Your plan does not include PDF generation |
+| 404 | `Submission not found` | No submission with that UUID is visible to the token |
+
+**Polling Example (Node.js)**
+
+```js
+async function getSubmissionPdfUrl(submissionId, token) {
+  const url = `https://app.formester.com/api/v2/submissions/${submissionId}/pdf`;
+
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const response = await fetch(url, { headers: { "X-FORMESTER-TOKEN": token } });
+    const body = await response.json();
+
+    if (response.status === 200) return body.downloadUrl;
+    if (response.status !== 202) throw new Error(`PDF request failed: ${response.status} ${JSON.stringify(body)}`);
+
+    await new Promise((resolve) => setTimeout(resolve, body.retryAfter * 1000));
+  }
+
+  throw new Error("PDF was not ready in time");
+}
+```
+
+> If your code runs under a short time limit (a HubSpot custom code action stops after 20 seconds), don't wait inside one run. Call the endpoint once to start the generation, add a delay step, then call it again in a second step. Check the status there too: the second call returns the link once the PDF is ready, and `202` again if it is not.
+
+> Every call, including each poll, counts against your token's [rate limit](#rate-limiting), which all your other API calls share. Wait for `retryAfter` between calls and handle `429` responses.
 
 ---
 
@@ -1418,12 +1571,13 @@ To **remove** an existing expiry on a unique link, pass `"expires_at": null` (or
 | Status Code | Description |
 |-------------|-------------|
 | 200 | Success |
-| 400 | Bad Request - Invalid token format or missing header, or an [unrecognized filter field](#unrecognized-filter-fields) |
+| 202 | Accepted - A [submission PDF](#get-submission-pdf) is still being generated |
+| 400 | Bad Request - Invalid token format or missing header, an [unrecognized filter field](#unrecognized-filter-fields), or an invalid [PDF style](#get-submission-pdf) |
 | 401 | Unauthorized - Invalid or inactive token |
-| 403 | Forbidden - Token lacks required scope |
+| 403 | Forbidden - Token lacks required scope, or the plan does not include the feature |
 | 404 | Not Found - Resource not found or not authorized |
 | 429 | Too Many Requests - Rate limit exceeded |
-| 500 | Internal Server Error |
+| 500 | Internal Server Error, including a [submission PDF](#get-submission-pdf) that failed to generate |
 
 ### Error Response Format
 
@@ -1561,6 +1715,9 @@ HTTP/1.1 429 Too Many Requests
 ---
 
 ## Changelog
+
+**2026-11** — Submission PDFs:
+- New endpoint `GET /submissions/:id/pdf` returns a download link for a submission's PDF, in any of the form's PDF styles. See [Get Submission PDF](#get-submission-pdf).
 
 **2026-09** — Submission filtering:
 - Filter fields can now be addressed by label (e.g. `Sales Person__is_equal_to=...`) in addition to element ID. See [Filtering Submissions](#filtering-submissions).
